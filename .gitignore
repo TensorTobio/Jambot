@@ -28,3 +28,7 @@ tests/test_organizer_pipeline.py
 
 # NOTE: results.json is deliberately NOT ignored - the submission checklist asks
 # for the results.json of a final clean evaluator run at the frozen commit.
+.idea/
+__pycache__/
+venv/
+.env
