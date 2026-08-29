@@ -1,116 +1,166 @@
-"""Interactive REPL for manually trying the agent against the real catalog.
+"""Hands-on driver for the agent - for demos and eyeballing behaviour.
 
-This is a manual testing convenience, not part of the official evaluator.
+Three modes:
 
-Usage:
-    python3 try_agent.py
-    python3 try_agent.py --sample public_0006   # preload a public_set.jsonl session's profile
+    python try_agent.py                     # chat with the agent yourself
+    python try_agent.py --sample public_0001  # replay one labelled session
+    python try_agent.py --sample random --n 5 # replay 5 random sessions
+
+The replay mode drives the agent with the *real* simulator functions imported
+from evaluator/local_evaluator.py, so a transcript here is exactly what the
+scorer saw. Nothing in this file is imported by the agent; it is a tool.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-import uuid
+import random
+import sys
 from pathlib import Path
 
-from starter.agent import Agent
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))
 
-DEFAULT_PROFILE = {
-    "purchase_frequency": "3-4 prior purchases",
-    "average_prior_rating": 4.5,
-    "rating_style": "usually positive",
-    "preference_tags": ["comfort", "fit"],
-    "summary": "Prior purchases emphasize comfort and fit; ratings are usually positive.",
-}
+from evaluator.local_evaluator import (  # noqa: E402
+    MAX_TURNS,
+    TOP_K,
+    catalog_index,
+    coarse_category,
+    customer_reply,
+    initial_message,
+    load_jsonl,
+    materialize_hidden_fields,
+    normalize_recommendations,
+)
+from starter.agent import Agent  # noqa: E402
+
+CATALOG = str(ROOT / "data" / "catalog.jsonl")
+DATASET = str(ROOT / "data" / "public_set.jsonl")
 
 
-def load_titles(catalog_path: str) -> dict[str, str]:
-    titles: dict[str, str] = {}
-    with Path(catalog_path).open(encoding="utf-8") as handle:
-        for line in handle:
-            row = json.loads(line)
-            titles[str(row["parent_asin"])] = str(row.get("title") or "")
-    return titles
+def short(text: str, width: int = 78) -> str:
+    text = " ".join(str(text).split())
+    return text if len(text) <= width else text[: width - 1] + "…"
 
 
-def find_profile(sample_id: str, dataset_path: str) -> dict:
-    with Path(dataset_path).open(encoding="utf-8") as handle:
-        for line in handle:
-            row = json.loads(line)
-            if row.get("sample_id") == sample_id:
-                return row["user_profile"]
-    raise SystemExit(f"sample_id {sample_id!r} not found in {dataset_path}")
+def show(recommendations: list[dict], products: dict, target: str | None, limit: int = 5) -> None:
+    if not recommendations:
+        print("      (holding back - not confident enough yet)")
+        return
+    for rank, item in enumerate(recommendations[:limit], 1):
+        asin = item["parent_asin"]
+        product = products.get(asin, {})
+        mark = "  <== TARGET" if target and asin == target else ""
+        price = product.get("price")
+        price_text = f" ${price}" if price not in (None, "") else ""
+        print(f"      {rank:>2}. {asin}{price_text}  {short(product.get('title', ''), 60)}{mark}")
+    if len(recommendations) > limit:
+        print(f"          ... {len(recommendations) - limit} more")
+
+
+def replay(agent: Agent, sample: dict, catalog_ids, categories, products) -> None:
+    """Drive one labelled session exactly the way the evaluator does."""
+    target = str(sample["ground_truth"]["parent_asin"])
+    card, behavior = materialize_hidden_fields(sample, products)
+    effective = {**sample, "intent_card": card, "behavior": behavior}
+
+    print("=" * 92)
+    print(f"{sample['sample_id']}  [{sample['scenario_type']} / {sample.get('difficulty_bucket', '?')}]")
+    print(f"target : {target}  {short(products[target].get('title', ''), 60)}")
+    print(f"hidden : hard={card['hard_constraints']}")
+    print(f"         soft={card['soft_preferences']}")
+    print(f"profile: {sample['user_profile'].get('summary', '')}")
+    print("-" * 92)
+
+    session_id = f"try_{sample['sample_id']}"
+    agent.reset(session_id, sample["user_profile"])
+    disclosed: set[str] = set()
+    boundary_used = False
+    override_applied = sample["scenario_type"] != "intent_override"
+    message = initial_message(effective, coarse_category(categories.get(target, [])), disclosed)
+
+    for turn in range(1, MAX_TURNS + 1):
+        print(f"  turn {turn}")
+        print(f"    user : {short(message)}")
+        response = agent.respond(session_id, message, turn, TOP_K)
+        ranked = normalize_recommendations(response.get("recommendations"), catalog_ids)
+        print(f"    agent: {short(response.get('message', ''))}   [ask_attribute={response.get('ask_attribute')!r}]")
+        show([{"parent_asin": a} for a in ranked], products, target)
+
+        if override_applied and target in ranked:
+            rank = ranked.index(target) + 1
+            print("-" * 92)
+            print(f"  HIT on turn {turn} at rank {rank}   (reciprocal rank {1 / rank:.3f})")
+            return
+        if turn == MAX_TURNS:
+            break
+        override = effective.get("behavior", {}).get("override") or {}
+        if not override_applied and turn + 1 == int(override.get("turn", 3)):
+            override_applied = True
+            if override.get("new_value"):
+                disclosed.add(str(override["new_value"]))
+            message = str(override.get("message", "Actually, please ignore my earlier preference."))
+        else:
+            message, boundary_used = customer_reply(
+                effective, response.get("ask_attribute"), disclosed, boundary_used
+            )
+    print("-" * 92)
+    print("  MISS (target never entered the top 10)")
+
+
+def chat(agent: Agent, products: dict) -> None:
+    print("\nType as the customer. Blank line or 'quit' to exit.")
+    print("Try:  I'm looking for Dresses Casual, but I'm still exploring.")
+    print("then: For that, what matters is: polyester; color: black.\n")
+    session_id = "manual"
+    agent.reset(session_id, {"preference_tags": ["fit", "comfort", "durability"]})
+    turn = 1
+    while turn <= MAX_TURNS:
+        try:
+            message = input(f"you ({turn}/10) > ").strip()
+        except (EOFError, KeyboardInterrupt):
+            break
+        if not message or message.lower() in {"quit", "exit"}:
+            break
+        response = agent.respond(session_id, message, turn, TOP_K)
+        print(f"    agent: {response['message']}   [ask_attribute={response['ask_attribute']!r}]")
+        show(response["recommendations"], products, None)
+        print()
+        turn += 1
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Manually chat with the agent")
-    parser.add_argument("--catalog", default="data/catalog.jsonl")
-    parser.add_argument("--dataset", default="data/public_set.jsonl")
-    parser.add_argument("--sample", default=None, help="preload a public_set.jsonl sample_id's user_profile")
-    parser.add_argument("--top", type=int, default=10, help="how many recommendations to print per turn")
+    parser = argparse.ArgumentParser(description="Try the TechJam agent by hand")
+    parser.add_argument("--sample", help="a sample_id from public_set.jsonl, or 'random'")
+    parser.add_argument("--n", type=int, default=1, help="how many random samples to replay")
+    parser.add_argument("--scenario", help="filter random replays: buying/browsing/intent_override/boundary")
+    parser.add_argument("--catalog", default=CATALOG)
+    parser.add_argument("--dataset", default=DATASET)
     args = parser.parse_args()
 
-    print("Loading catalog and building index (a few seconds)...")
+    print("building catalog index (about 20s)...", flush=True)
+    catalog_ids, categories, products = catalog_index(args.catalog)
     agent = Agent(args.catalog)
-    titles = load_titles(args.catalog)
+    print(f"ready: {len(catalog_ids)} products\n", flush=True)
 
-    profile = find_profile(args.sample, args.dataset) if args.sample else DEFAULT_PROFILE
-    session_id = f"manual_{uuid.uuid4().hex[:8]}"
-    agent.reset(session_id, profile)
+    if not args.sample:
+        chat(agent, products)
+        return
 
-    print(f"\nSession {session_id} | profile: {json.dumps(profile)}")
-    print(
-        "Type your shopping message each turn, or a number to pick that item from the "
-        "last list shown (demo-only - the real protocol has no such action, see below). "
-        "Type 'quit' to stop.\n"
-    )
-
-    last_recs: list[dict] = []
-    turn = 1
-    while turn <= 10:
-        try:
-            user_message = input(f"[turn {turn}] you> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            break
-        if user_message.lower() in {"quit", "exit"}:
-            break
-        if not user_message:
-            continue
-
-        picked = user_message.rstrip(".").strip()
-        if picked.isdigit() and last_recs:
-            index = int(picked)
-            if 1 <= index <= len(last_recs):
-                asin = last_recs[index - 1].get("parent_asin", "")
-                title = titles.get(asin, "(unknown)")
-                print(f"  You picked #{index}: {asin}  {title[:90]}")
-                print(
-                    "  Demo-only: in real scoring there is no 'select' action - the session\n"
-                    "  ends automatically the instant the evaluator's hidden target parent_asin\n"
-                    "  (which neither you nor the agent ever sees) appears anywhere in the\n"
-                    "  recommendations respond() returns. Nothing you type can confirm or end\n"
-                    "  it directly; only a real match against that hidden ID does.\n"
-                )
-                break
-            print(f"  (no item #{index} in the last list - it only had {len(last_recs)})\n")
-            continue
-
-        response = agent.respond(session_id, user_message, turn, 10)
-        print(f"  agent> {response['message']}")
-        if response.get("ask_attribute"):
-            print(f"  (asking about: {response['ask_attribute']})")
-        last_recs = response.get("recommendations") or []
-        for rank, rec in enumerate(last_recs[: args.top], start=1):
-            asin = rec.get("parent_asin", "")
-            title = titles.get(asin, "(unknown)")
-            print(f"    {rank}. {asin}  {title[:90]}")
-        print()
-        turn += 1
+    samples = load_jsonl(args.dataset)
+    if args.scenario:
+        samples = [s for s in samples if s["scenario_type"] == args.scenario]
+    if args.sample == "random":
+        chosen = random.sample(samples, min(args.n, len(samples)))
     else:
-        print("Reached turn 10 - in real scoring this session would now be scored a miss.")
-
-    print("Session ended.")
+        chosen = [s for s in samples if s["sample_id"] == args.sample]
+        if not chosen:
+            print(f"no sample with id {args.sample!r}")
+            return
+    for sample in chosen:
+        replay(agent, sample, catalog_ids, categories, products)
+        print()
 
 
 if __name__ == "__main__":

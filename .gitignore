@@ -1,18 +1,31 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+*.log
+
+# Credentials - never commit. See api_call_agent/.env.example.
 .env
-results.json
+api_call_agent/.env
+
+# Cached model responses (regenerate by re-running; can be large).
+api_call_agent/.cache/
+
+# The catalog is downloaded from the GitHub Release, not committed.
 data/catalog.jsonl
 data/releases/
+
 # Organizer-only code, private evaluation data, manifests, and build reports.
 organizer/
 secure/
+
 # Internal provenance and release-audit working documents.
 docs/audits/
 docs/data_selection_audit.md
 docs/participant_release_checklist.md
+
 # Organizer-only pipeline tests.
 tests/test_5core_builder.py
 tests/test_organizer_pipeline.py
-*.log
+
+# NOTE: results.json is deliberately NOT ignored - the submission checklist asks
+# for the results.json of a final clean evaluator run at the frozen commit.

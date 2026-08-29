@@ -1,0 +1,218 @@
+[
+  {
+    "config": "other  + hold back  (shipped)",
+    "ask_policy": "other",
+    "always_recommend": false,
+    "HR": 1.0,
+    "MRR": 0.969917,
+    "MTTC": 2.89,
+    "Eff": 0.811,
+    "TS": 0.953175,
+    "scenario_metrics": {
+      "boundary": {
+        "sample_count": 10,
+        "hit_rate_at_10": 1.0,
+        "mrr": 1.0,
+        "mttc": 3.7
+      },
+      "browsing": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.951875,
+        "mttc": 2.775
+      },
+      "buying": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.98125,
+        "mttc": 2.6
+      },
+      "intent_override": {
+        "sample_count": 30,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.977778,
+        "mttc": 3.7
+      }
+    }
+  },
+  {
+    "config": "other  + always show",
+    "ask_policy": "other",
+    "always_recommend": true,
+    "HR": 1.0,
+    "MRR": 0.716282,
+    "MTTC": 1.595,
+    "Eff": 0.9405,
+    "TS": 0.902985,
+    "scenario_metrics": {
+      "boundary": {
+        "sample_count": 10,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.62,
+        "mttc": 1.6
+      },
+      "browsing": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.637912,
+        "mttc": 1.3375
+      },
+      "buying": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.732376,
+        "mttc": 1.1
+      },
+      "intent_override": {
+        "sample_count": 30,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.914444,
+        "mttc": 3.6
+      }
+    }
+  },
+  {
+    "config": "split  + hold back",
+    "ask_policy": "split",
+    "always_recommend": false,
+    "HR": 1.0,
+    "MRR": 0.942833,
+    "MTTC": 3.105,
+    "Eff": 0.7895,
+    "TS": 0.94075,
+    "scenario_metrics": {
+      "boundary": {
+        "sample_count": 10,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.925,
+        "mttc": 3.7
+      },
+      "browsing": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.906042,
+        "mttc": 3.1125
+      },
+      "buying": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.975,
+        "mttc": 2.775
+      },
+      "intent_override": {
+        "sample_count": 30,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.961111,
+        "mttc": 3.766667
+      }
+    }
+  },
+  {
+    "config": "split  + always show",
+    "ask_policy": "split",
+    "always_recommend": true,
+    "HR": 1.0,
+    "MRR": 0.723155,
+    "MTTC": 1.64,
+    "Eff": 0.936,
+    "TS": 0.904146,
+    "scenario_metrics": {
+      "boundary": {
+        "sample_count": 10,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.62,
+        "mttc": 1.7
+      },
+      "browsing": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.644122,
+        "mttc": 1.425
+      },
+      "buying": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.725848,
+        "mttc": 1.1125
+      },
+      "intent_override": {
+        "sample_count": 30,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.961111,
+        "mttc": 3.6
+      }
+    }
+  },
+  {
+    "config": "rotate + hold back",
+    "ask_policy": "rotate",
+    "always_recommend": false,
+    "HR": 1.0,
+    "MRR": 0.861179,
+    "MTTC": 3.545,
+    "Eff": 0.7455,
+    "TS": 0.907454,
+    "scenario_metrics": {
+      "boundary": {
+        "sample_count": 10,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.633333,
+        "mttc": 4.8
+      },
+      "browsing": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.817202,
+        "mttc": 3.6625
+      },
+      "buying": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.914702,
+        "mttc": 3.2125
+      },
+      "intent_override": {
+        "sample_count": 30,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.911667,
+        "mttc": 3.7
+      }
+    }
+  },
+  {
+    "config": "rotate + always show",
+    "ask_policy": "rotate",
+    "always_recommend": true,
+    "HR": 1.0,
+    "MRR": 0.699683,
+    "MTTC": 1.78,
+    "Eff": 0.922,
+    "TS": 0.894305,
+    "scenario_metrics": {
+      "boundary": {
+        "sample_count": 10,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.62,
+        "mttc": 2.6
+      },
+      "browsing": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.616483,
+        "mttc": 1.65
+      },
+      "buying": {
+        "sample_count": 80,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.713348,
+        "mttc": 1.125
+      },
+      "intent_override": {
+        "sample_count": 30,
+        "hit_rate_at_10": 1.0,
+        "mrr": 0.911667,
+        "mttc": 3.6
+      }
+    }
+  }
+]
