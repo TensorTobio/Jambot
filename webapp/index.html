@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shopping Agent — Local Demo</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1e222b;
+    --border: #2a2f3a;
+    --text: #e8eaed;
+    --text-dim: #9aa1ac;
+    --accent: #6ea8ff;
+    --accent-dim: #2b3a55;
+    --user-bubble: #2f6fed;
+    --agent-bubble: #232833;
+    --chip: #3a2f1a;
+    --chip-text: #e3b45a;
+    --card: #1c202a;
+    --success: #3ecf8e;
+    --radius: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+  }
+  #app {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    height: 100vh;
+  }
+  /* Sidebar */
+  #sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+  }
+  #sidebar h1 {
+    font-size: 17px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  #sidebar .sub {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .field-label {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  select, button, input[type=text] {
+    font-family: inherit;
+    font-size: 13.5px;
+  }
+  select {
+    width: 100%;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 10px;
+  }
+  #newSessionBtn {
+    width: 100%;
+    background: var(--accent);
+    color: #0b1220;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #newSessionBtn:hover { filter: brightness(1.08); }
+  .profile-box {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .profile-box b { color: var(--text); }
+  .tag {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 11px;
+    margin: 2px 3px 0 0;
+  }
+  #turnMeter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  #turnBar {
+    flex: 1;
+    height: 6px;
+    background: var(--panel-2);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  #turnBarFill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.25s ease;
+  }
+  .footnote {
+    margin-top: auto;
+    font-size: 11px;
+    color: #6b7280;
+    line-height: 1.6;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  /* Main column */
+  #main {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  #chatHeader {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #chatHeader .name { font-weight: 600; font-size: 14.5px; }
+  #chatHeader .status {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(62,207,142,0.15);
+  }
+  #chatLog {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .row { display: flex; }
+  .row.user { justify-content: flex-end; }
+  .row.agent { justify-content: flex-start; }
+  .bubble {
+    max-width: 66%;
+    padding: 11px 15px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .row.user .bubble {
+    background: var(--user-bubble);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .row.agent .bubble {
+    background: var(--agent-bubble);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+  .agent-block { display: flex; flex-direction: column; gap: 8px; max-width: 78%; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    align-self: flex-start;
+    background: var(--chip);
+    color: var(--chip-text);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+  .recs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .rec-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 11px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+  }
+  .rec-card:hover { border-color: var(--accent); }
+  .rec-card:active { transform: scale(0.98); }
+  .rec-card.is-target {
+    border-color: var(--success);
+    box-shadow: 0 0 0 1px var(--success);
+  }
+  .rec-card.is-target .rank { color: var(--success); }
+  .target-box {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .target-box b { color: var(--success); }
+  .hit-banner {
+    align-self: center;
+    background: rgba(62,207,142,0.12);
+    border: 1px solid var(--success);
+    color: var(--success);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: center;
+    max-width: 85%;
+  }
+  .rec-card .rank {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .rec-card .title {
+    font-size: 12.3px;
+    color: var(--text);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .rec-card .meta {
+    margin-top: 5px;
+    font-size: 10.8px;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .rec-card .price { color: var(--success); font-weight: 600; }
+  .system-note {
+    align-self: center;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    max-width: 80%;
+    text-align: center;
+    line-height: 1.5;
+  }
+  #composer {
+    border-top: 1px solid var(--border);
+    padding: 14px 24px 18px;
+    display: flex;
+    gap: 10px;
+  }
+  #msgInput {
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 12px 14px;
+    outline: none;
+  }
+  #msgInput:focus { border-color: var(--accent); }
+  #sendBtn {
+    background: var(--accent);
+    color: #0b1220;
+    border: none;
+    border-radius: 12px;
+    padding: 0 20px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #sendBtn:disabled, #msgInput:disabled { opacity: 0.45; cursor: not-allowed; }
+  #sendBtn:not(:disabled):hover { filter: brightness(1.08); }
+  .typing {
+    display: flex;
+    gap: 4px;
+    padding: 4px 2px;
+  }
+  .typing span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-dim);
+    animation: blink 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div>
+      <h1>Shopping Agent</h1>
+      <div class="sub">Local demo of starter/retrieval_agent.py against the real 50k-product catalog. Not part of official scoring.</div>
+    </div>
+
+    <div>
+      <div class="field-label">Customer profile</div>
+      <select id="profileSelect"><option value="">Default profile</option></select>
+    </div>
+
+    <button id="newSessionBtn">Start new session</button>
+
+    <div id="profileBox" class="profile-box">No active session.</div>
+
+    <div id="targetBox" class="target-box" style="display:none;"></div>
+
+    <div id="turnMeter">
+      <span id="turnLabel">Turn 0/10</span>
+      <div id="turnBar"><div id="turnBarFill"></div></div>
+    </div>
+
+    <div class="footnote">
+      Real scoring has no "select" action — the session ends automatically the turn the
+      hidden target ID shows up in the recommendations. Pick a public-set profile (not
+      "Default profile") to test this for real: public_set.jsonl ships its ground truth
+      openly for local development, so this page can reveal the actual target and detect
+      a real hit exactly like the evaluator does. Clicking a card is still just a demo
+      convenience, unrelated to hit detection.
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="chatHeader">
+      <div class="name">Session <span id="sessionIdLabel">—</span></div>
+      <div class="status"><span class="dot"></span><span id="statusLabel">Ready</span></div>
+    </div>
+    <div id="chatLog"></div>
+    <div id="composer">
+      <input id="msgInput" type="text" placeholder="Start a session to begin chatting…" disabled />
+      <button id="sendBtn" disabled>Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const chatLog = document.getElementById('chatLog');
+const msgInput = document.getElementById('msgInput');
+const sendBtn = document.getElementById('sendBtn');
+const newSessionBtn = document.getElementById('newSessionBtn');
+const profileSelect = document.getElementById('profileSelect');
+const profileBox = document.getElementById('profileBox');
+const turnLabel = document.getElementById('turnLabel');
+const turnBarFill = document.getElementById('turnBarFill');
+const sessionIdLabel = document.getElementById('sessionIdLabel');
+const statusLabel = document.getElementById('statusLabel');
+const targetBox = document.getElementById('targetBox');
+
+let sessionId = null;
+let ended = false;
+let targetAsin = null;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function scrollToBottom() {
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function addUserMessage(text) {
+  const row = el('div', 'row user');
+  row.appendChild(el('div', 'bubble', text));
+  chatLog.appendChild(row);
+  scrollToBottom();
+}
+
+function addSystemNote(text) {
+  const note = el('div', 'system-note', text);
+  chatLog.appendChild(note);
+  scrollToBottom();
+}
+
+function addHitBanner(rank, turn) {
+  const banner = el('div', 'hit-banner',
+    '🎯 Real hit at rank #' + rank + ', turn ' + turn + ' — in actual scoring this session ends here.');
+  chatLog.appendChild(banner);
+  scrollToBottom();
+}
+
+function addTypingIndicator() {
+  const row = el('div', 'row agent');
+  row.id = 'typingRow';
+  const bubble = el('div', 'bubble');
+  const t = el('div', 'typing');
+  t.appendChild(el('span')); t.appendChild(el('span')); t.appendChild(el('span'));
+  bubble.appendChild(t);
+  row.appendChild(bubble);
+  chatLog.appendChild(row);
+  scrollToBottom();
+}
+
+function removeTypingIndicator() {
+  const row = document.getElementById('typingRow');
+  if (row) row.remove();
+}
+
+function fmtPrice(p) {
+  if (p === null || p === undefined || p === '') return null;
+  return '$' + Number(p).toFixed(2);
+}
+
+function addAgentTurn(data) {
+  const row = el('div', 'row agent');
+  const block = el('div', 'agent-block');
+
+  const bubble = el('div', 'bubble', data.message || '(no message)');
+  block.appendChild(bubble);
+
+  if (data.ask_attribute) {
+    const chip = el('div', 'chip', '❓ asking about: ' + data.ask_attribute);
+    block.appendChild(chip);
+  }
+
+  if (data.recommendations && data.recommendations.length) {
+    const grid = el('div', 'recs');
+    data.recommendations.forEach((rec, i) => {
+      const card = el('div', rec.is_target ? 'rec-card is-target' : 'rec-card');
+      const rankLabel = (rec.is_target ? '🎯 ' : '') + '#' + (i + 1) + '  ·  ' + rec.parent_asin;
+      card.appendChild(el('div', 'rank', rankLabel));
+      card.appendChild(el('div', 'title', rec.title || '(untitled)'));
+      const meta = el('div', 'meta');
+      const price = fmtPrice(rec.price);
+      meta.appendChild(el('span', null, rec.store || ''));
+      if (price) meta.appendChild(el('span', 'price', price));
+      card.appendChild(meta);
+      card.addEventListener('click', () => selectRecommendation(rec, i + 1));
+      grid.appendChild(card);
+    });
+    block.appendChild(grid);
+  }
+
+  row.appendChild(block);
+  chatLog.appendChild(row);
+  scrollToBottom();
+}
+
+function selectRecommendation(rec, rank) {
+  addSystemNote(
+    'You picked #' + rank + ': ' + rec.parent_asin + ' — ' + (rec.title || '').slice(0, 70) +
+    '\n(Demo only — real scoring has no select action; it ends automatically ' +
+    'when the hidden target ID matches something the agent already returned.)'
+  );
+}
+
+async function loadSamples() {
+  const res = await fetch('/api/samples');
+  const data = await res.json();
+  (data.samples || []).forEach(s => {
+    const opt = el('option', null, s.sample_id + '  (' + s.scenario_type + ', ' + s.difficulty_bucket + ')');
+    opt.value = s.sample_id;
+    profileSelect.appendChild(opt);
+  });
+}
+
+async function startSession() {
+  chatLog.innerHTML = '';
+  ended = false;
+  statusLabel.textContent = 'Starting…';
+  const res = await fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sample_id: profileSelect.value || null }),
+  });
+  const data = await res.json();
+  sessionId = data.session_id;
+  sessionIdLabel.textContent = sessionId;
+  statusLabel.textContent = 'Ready';
+
+  const p = data.profile || {};
+  const tags = (p.preference_tags || []).map(t => '<span class="tag">' + t + '</span>').join('');
+  profileBox.innerHTML =
+    '<b>Purchases:</b> ' + (p.purchase_frequency || '—') + '<br>' +
+    '<b>Rating style:</b> ' + (p.rating_style || '—') + '<br>' +
+    '<b>Summary:</b> ' + (p.summary || '—') +
+    (tags ? '<br><br>' + tags : '');
+
+  if (data.target) {
+    targetAsin = data.target.parent_asin;
+    targetBox.style.display = 'block';
+    targetBox.innerHTML =
+      '<b>🎯 Test target (this session\'s real answer):</b><br>' +
+      data.target.parent_asin + '<br>' + (data.target.title || '').slice(0, 90);
+  } else {
+    targetAsin = null;
+    targetBox.style.display = 'none';
+    targetBox.innerHTML = '';
+  }
+
+  turnLabel.textContent = 'Turn 0/10';
+  turnBarFill.style.width = '0%';
+
+  msgInput.disabled = false;
+  sendBtn.disabled = false;
+  msgInput.placeholder = 'Describe what you\'re shopping for…';
+  msgInput.focus();
+
+  addSystemNote('New session started' + (data.sample_id ? ' with profile ' + data.sample_id : ' with the default profile') + '.' +
+    (data.target ? ' Real target revealed in the sidebar — try to guide the agent to it.' : ' No real target (default profile) — pick a public-set profile to test hit detection.'));
+}
+
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text || !sessionId || ended) return;
+  addUserMessage(text);
+  msgInput.value = '';
+  msgInput.disabled = true;
+  sendBtn.disabled = true;
+  addTypingIndicator();
+
+  try {
+    const res = await fetch('/api/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, message: text }),
+    });
+    const data = await res.json();
+    removeTypingIndicator();
+
+    if (data.error) {
+      addSystemNote('Error: ' + data.error);
+    } else {
+      addAgentTurn(data);
+      turnLabel.textContent = 'Turn ' + data.turn + '/' + data.max_turns;
+      turnBarFill.style.width = Math.min(100, (data.turn / data.max_turns) * 100) + '%';
+      if (data.hit) {
+        addHitBanner(data.hit_rank, data.turn);
+        ended = true;
+      } else if (data.ended) {
+        ended = true;
+        if (data.has_target) {
+          addSystemNote('Reached turn 10 without hitting the real target — this session would score a miss.');
+        } else {
+          addSystemNote('Reached turn 10 — no real target loaded (default profile), so hit/miss can\'t be checked here.');
+        }
+      }
+    }
+  } catch (e) {
+    removeTypingIndicator();
+    addSystemNote('Request failed: ' + e);
+  }
+
+  if (!ended) {
+    msgInput.disabled = false;
+    sendBtn.disabled = false;
+    msgInput.focus();
+  }
+}
+
+newSessionBtn.addEventListener('click', startSession);
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.keyCode === 13) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+loadSamples();
+</script>
+</body>
+</html>
