@@ -11,7 +11,6 @@ api_call_agent/.env
 api_call_agent/.cache/
 
 # The catalog is downloaded from the GitHub Release, not committed.
-data/catalog.jsonl
 data/releases/
 
 # Organizer-only code, private evaluation data, manifests, and build reports.
