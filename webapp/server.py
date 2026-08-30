@@ -7,7 +7,7 @@ a small JSON API and serves a static chat page.
 Three agents are selectable at runtime, all behind the identical contract:
 
     rules    starter.agent            constraint + category + BM25, deterministic
-    llm      api_call_agent.agent     Claude Haiku 4.5 rephrase -> retrieve -> rerank
+    llm      api_call_agent.agent     Haiku rephrase -> retrieve -> rerank -> reply
     keyword  starter.agent_keyword    generic NLP/FTS5 agent (earlier variant)
 
 Agents are constructed lazily on first use, and ``rules``/``llm`` share one
@@ -57,7 +57,7 @@ AGENT_INFO = {
     },
     "llm": {
         "label": "Claude Haiku 4.5 (api_call_agent)",
-        "detail": "Haiku rephrases the turn, retrieval shortlists 30, Haiku reranks to the top 10. Needs ANTHROPIC_API_KEY.",
+        "detail": "Haiku rephrases the turn, retrieval shortlists 30, Haiku reorders what the evidence tied, and Haiku writes the reply. Needs ANTHROPIC_API_KEY.",
     },
     "keyword": {
         "label": "Keyword/NLP (earlier variant)",

@@ -325,10 +325,10 @@ run ≈ 44 s on a laptop-class CPU. Python standard library only.
 
 ## How to run it
 
-From the repo root (`amazon_data/`), Python 3.10+, no `pip install` needed:
+From the repo root (`Jambot/`), Python 3.10+, no `pip install` needed:
 
 ```bat
-cd C:\Users\snattawat\Documents\amazon_data
+cd C:\Users\snattawat\Documents\Jambot
 
 :: 1. the official score -> prints metrics, rewrites results.json  (~45s)
 python -m evaluator.local_evaluator

@@ -1,14 +1,14 @@
 {
   "sample_count": 20,
   "hit_rate_at_10": 1.0,
-  "mrr": 0.975,
+  "mrr": 1.0,
   "mttc": 2.8,
   "efficiency": 0.82,
-  "recommended_technical_score": 0.9565,
+  "recommended_technical_score": 0.964,
   "reported_token_usage": {
-    "prompt_tokens": 97693,
-    "completion_tokens": 13192,
-    "total_tokens": 110885
+    "prompt_tokens": 142635,
+    "completion_tokens": 15475,
+    "total_tokens": 158110
   },
   "scenario_metrics": {
     "boundary": {
@@ -32,7 +32,7 @@
     "intent_override": {
       "sample_count": 3,
       "hit_rate_at_10": 1.0,
-      "mrr": 0.833333,
+      "mrr": 1.0,
       "mttc": 3.666667
     }
   },
@@ -130,8 +130,8 @@
       "scenario_type": "intent_override",
       "hit": true,
       "first_hit_turn": 3,
-      "best_rank": 2,
-      "reciprocal_rank": 0.5
+      "best_rank": 1,
+      "reciprocal_rank": 1.0
     },
     {
       "sample_id": "public_0055",
@@ -200,12 +200,21 @@
   ],
   "llm_usage": {
     "model": "claude-haiku-4-5-20251001",
-    "calls": 83,
-    "cache_hits": 0,
+    "calls": 82,
+    "cache_hits": 57,
     "failures": 0,
-    "input_tokens": 97693,
-    "output_tokens": 13192,
-    "estimated_cost_usd": 0.1637
+    "input_tokens": 142635,
+    "output_tokens": 15475,
+    "estimated_cost_usd": 0.22,
+    "stages": {
+      "turns": 56,
+      "constraints_added_by_model": 0,
+      "constraints_rejected_not_verbatim": 0,
+      "rerank_called": 27,
+      "rerank_skipped_determined": 0,
+      "reply_from_model": 56,
+      "reply_from_template": 0
+    }
   },
   "comparison_rule_based": {
     "hit_rate_at_10": 1.0,

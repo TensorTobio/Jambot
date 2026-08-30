@@ -5,7 +5,7 @@ Not part of the evaluator or the submission scoring path. Python standard
 library only; no build step, no npm.
 
 ```bat
-cd C:\Users\snattawat\Documents\amazon_data
+cd C:\Users\snattawat\Documents\Jambot
 python webapp\server.py
 :: then open http://127.0.0.1:8787
 ```
@@ -21,12 +21,37 @@ built on first selection.
 | id | Module | What it is | Public-set TechnicalScore |
 |---|---|---|---|
 | `rules` | `starter/agent.py` | Constraint reverse-index + category filter + BM25, deterministic | **0.9532** |
-| `llm` | `api_call_agent/agent.py` | Haiku 4.5 rephrase → retrieve → rerank | needs `ANTHROPIC_API_KEY` |
+| `llm` | `api_call_agent/agent.py` | Haiku 4.5 rephrase → retrieve → rerank → reply | 0.964, needs `ANTHROPIC_API_KEY` |
 | `keyword` | `starter/agent_keyword.py` | Generic phrase extraction over FTS5 (earlier variant) | 0.6799 |
 
 `rules` and `llm` share one `CatalogIndex`, so switching between them is
 instant after the first build. The agent picker in the sidebar shows each one's
 description and greys out `llm` when no API key is set.
+
+### What `llm` sounds like
+
+`rules` writes its `message` from a rotating template. `llm` adds a fourth stage
+that writes the sentence with the model instead, so the transcript reads like a
+person rather than a form:
+
+```
+customer: I'm looking for Sets Tracksuits, but I'm still exploring.
+agent   : You're just getting a feel for what's out there, makes sense. Are you
+          after something you can wear for workouts, or more for lounging around?
+customer: For that, what matters is: polyester; Drawstring closure.
+agent   : Polyester and a drawstring works for us - that narrows things down
+          nicely. Does the fit matter to you, like whether you want something
+          more fitted or relaxed?
+```
+
+That is a real `/api/autoplay` transcript for `public_0181` (hit at rank 1 on
+turn 3, ~$0.01). The scored fields are unchanged by that stage - only the words
+are model-written - and a reply that fails validation silently falls back to the
+`rules` template. See `api_call_agent/README.md` for the guards.
+
+`llm` costs roughly $0.01 per autoplayed session and takes a second or two per
+turn, so a live demo of it is noticeably slower than `rules`. Warm it up before
+recording: `python webapp\server.py --agent llm`.
 
 ## Question strategy / always-show toggle
 

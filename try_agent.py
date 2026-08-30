@@ -6,6 +6,11 @@ Three modes:
     python try_agent.py --sample public_0001  # replay one labelled session
     python try_agent.py --sample random --n 5 # replay 5 random sessions
 
+Add ``--api`` to drive the Haiku-in-the-loop agent from ``api_call_agent/``
+instead of the rule-based one. That is the mode to record for the demo: same
+scored answers, but the ``agent:`` lines are written by the model rather than
+by a template. It makes live API calls and costs a fraction of a cent a session.
+
 The replay mode drives the agent with the *real* simulator functions imported
 from evaluator/local_evaluator.py, so a transcript here is exactly what the
 scorer saw. Nothing in this file is imported by the agent; it is a tool.
@@ -137,11 +142,21 @@ def main() -> None:
     parser.add_argument("--scenario", help="filter random replays: buying/browsing/intent_override/boundary")
     parser.add_argument("--catalog", default=CATALOG)
     parser.add_argument("--dataset", default=DATASET)
+    parser.add_argument(
+        "--api", action="store_true",
+        help="use the Haiku-in-the-loop agent (live API calls) instead of the rule-based one",
+    )
     args = parser.parse_args()
 
     print("building catalog index (about 20s)...", flush=True)
     catalog_ids, categories, products = catalog_index(args.catalog)
-    agent = Agent(args.catalog)
+    if args.api:
+        from api_call_agent.agent import Agent as ApiAgent
+
+        agent = ApiAgent(args.catalog)
+        print(f"agent: api_call_agent ({agent.client.model})", flush=True)
+    else:
+        agent = Agent(args.catalog)
     print(f"ready: {len(catalog_ids)} products\n", flush=True)
 
     if not args.sample:

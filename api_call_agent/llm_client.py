@@ -202,11 +202,14 @@ class ClaudeClient:
         max_tokens: int = 600,
         temperature: float = 0.0,
         prefill: str | None = None,
+        stop_sequences: list[str] | None = None,
     ) -> str | None:
         """Return the assistant text, or ``None`` if the call could not be made.
 
         ``prefill`` seeds the assistant turn (e.g. ``"["``) to force the model
-        straight into JSON without a preamble.
+        straight into JSON without a preamble. ``stop_sequences`` caps a
+        free-text answer at the first structure we do not want (a blank line,
+        say), which is cheaper than generating it and throwing it away.
         """
         messages: list[dict] = [{"role": "user", "content": user}]
         if prefill:
@@ -219,6 +222,8 @@ class ClaudeClient:
             "system": system,
             "messages": messages,
         }
+        if stop_sequences:
+            payload["stop_sequences"] = list(stop_sequences)
 
         cache_file = self._cache_path(payload) if self.use_cache else None
         if cache_file is not None and cache_file.exists():

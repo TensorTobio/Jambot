@@ -26,6 +26,7 @@ from evaluator.local_evaluator import catalog_index, evaluate, load_jsonl  # noq
 
 from api_call_agent.agent import Agent as ApiAgent  # noqa: E402
 from api_call_agent.llm_client import DEFAULT_MODEL, ClaudeClient, api_key  # noqa: E402
+from api_call_agent.rerank import MODEL_WEIGHT  # noqa: E402
 
 CORE = ("hit_rate_at_10", "mrr", "mttc", "efficiency", "recommended_technical_score")
 
@@ -56,6 +57,15 @@ def main() -> None:
     parser.add_argument("--no-cache", action="store_true", help="ignore the on-disk response cache")
     parser.add_argument("--no-rephrase", action="store_true", help="skip stage 1")
     parser.add_argument("--no-rerank", action="store_true", help="skip stage 3")
+    parser.add_argument("--no-reply", action="store_true", help="skip stage 4 (template wording)")
+    parser.add_argument(
+        "--reply-tokens", type=int, default=70,
+        help="output cap for the customer-facing sentence (default 70)",
+    )
+    parser.add_argument(
+        "--model-weight", type=float, default=None,
+        help="how loud stage 3's vote is against retrieval (default 0.2; 0 disables it)",
+    )
     parser.add_argument("--compare", action="store_true", help="also score the rule-based agent on the same sessions")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
@@ -73,7 +83,8 @@ def main() -> None:
         samples = random.Random(args.seed).sample(samples, args.limit)
 
     client = ClaudeClient(model=args.model, use_cache=not args.no_cache, verbose=args.verbose)
-    print(f"sessions: {len(samples)}   model: {client.model}   shortlist: {args.candidates}")
+    print(f"sessions: {len(samples)}   model: {client.model}   shortlist: {args.candidates}"
+          f"   reply cap: {'off' if args.no_reply else args.reply_tokens}")
 
     print("building catalog index...", flush=True)
     catalog_ids, categories, products = catalog_index(args.catalog)
@@ -82,17 +93,37 @@ def main() -> None:
         client=client,
         use_rephrase=not args.no_rephrase,
         use_rerank=not args.no_rerank,
+        use_reply=not args.no_reply,
         candidate_pool=args.candidates,
+        reply_tokens=args.reply_tokens,
+        model_weight=MODEL_WEIGHT if args.model_weight is None else args.model_weight,
         verbose=args.verbose,
     )
     print("running (this makes live API calls)...", flush=True)
     result = evaluate(agent, samples, catalog_ids, categories, products)
-    result["llm_usage"] = client.usage_report()
+    usage = agent.usage_report()
+    result["llm_usage"] = usage
 
     summarise(f"api_call_agent ({client.model})", result)
     print("\n  LLM usage:")
-    for key, value in client.usage_report().items():
-        print(f"    {key:<20} {value}")
+    for key, value in usage.items():
+        if key != "stages":
+            print(f"    {key:<20} {value}")
+    print("")
+    print("  stage activity:")
+    for key, value in usage["stages"].items():
+        print(f"    {key:<28} {value}")
+    stages = usage["stages"]
+    if stages["rerank_skipped_determined"]:
+        print(
+            f"    -> {stages['rerank_skipped_determined']} rerank call(s) skipped: "
+            "the evidence already fixed the top 10"
+        )
+    if stages["constraints_rejected_not_verbatim"]:
+        print(
+            f"    -> {stages['constraints_rejected_not_verbatim']} model constraint(s) demoted to "
+            "keywords for not quoting the customer verbatim"
+        )
 
     if args.compare:
         from starter.agent import Agent as RuleAgent
