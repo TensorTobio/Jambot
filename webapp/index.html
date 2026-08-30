@@ -3,26 +3,31 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Shopping Agent — Local Demo</title>
+<title>Shopping Agent</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #171a21;
-    --panel-2: #1e222b;
-    --border: #2a2f3a;
-    --text: #e8eaed;
-    --text-dim: #9aa1ac;
-    --accent: #6ea8ff;
-    --accent-dim: #2b3a55;
-    --user-bubble: #2f6fed;
-    --agent-bubble: #232833;
-    --chip: #3a2f1a;
-    --chip-text: #e3b45a;
-    --card: #1c202a;
-    --success: #3ecf8e;
-    --warn: #e3b45a;
-    --radius: 14px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --bg: #16110a;
+    --panel: #1e1710;
+    --panel-2: #261d13;
+    --border: #3d2f1c;
+    --border-soft: #2e2416;
+    --text: #f3ead9;
+    --text-dim: #b09d81;
+    --text-faint: #75634a;
+    --accent: #c98a3f;
+    --accent-2: #a8672a;
+    --accent-soft: rgba(201, 138, 63, 0.16);
+    --accent-dim: #40300f;
+    --user-bubble: linear-gradient(135deg, #c98a3f, #a8672a);
+    --agent-bubble: #261d13;
+    --card: #221a10;
+    --success: #8faa5d;
+    --warn: #d9a441;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --shadow-soft: 0 6px 20px rgba(0,0,0,0.4);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -30,144 +35,125 @@
     margin: 0;
     background: var(--bg);
     color: var(--text);
+    font-size: 14.5px;
   }
   #app {
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 300px 1fr;
     height: 100vh;
   }
+
   /* Sidebar */
   #sidebar {
     background: var(--panel);
-    border-right: 1px solid var(--border);
-    padding: 20px 18px;
+    border-right: 1px solid var(--border-soft);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+  .brand-box {
+    background: linear-gradient(155deg, var(--accent-dim), var(--panel-2));
+    border: 1.5px dashed var(--accent);
+    border-radius: var(--radius-md);
+    padding: 18px 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-box::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -25%;
+    transform: translateY(-50%);
+    width: 140px;
+    height: 140px;
+    background: radial-gradient(circle, rgba(232,163,61,0.28), transparent 70%);
+    pointer-events: none;
+  }
+  .brand-eyebrow {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  #sidebar h1 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+    position: relative;
+  }
+  .sidebar-bottom {
+    margin-top: auto;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    overflow-y: auto;
   }
-  #sidebar h1 {
-    font-size: 17px;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-  #sidebar .sub {
-    font-size: 12.5px;
-    color: var(--text-dim);
-    margin-top: 4px;
-    line-height: 1.5;
-  }
-  .field-label {
-    font-size: 11.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-  }
-  select, button, input[type=text] {
-    font-family: inherit;
-    font-size: 13.5px;
-  }
-  select {
-    width: 100%;
-    background: var(--panel-2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 10px;
-  }
-  select option:disabled { color: #5a6068; }
-  .agent-detail {
-    font-size: 11.5px;
-    color: var(--text-dim);
-    line-height: 1.5;
-    margin-top: 6px;
-  }
-  .agent-detail b { color: var(--warn); }
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px;
-    color: var(--text-dim);
-    margin-top: 8px;
-    cursor: pointer;
-  }
-  .toggle input { accent-color: var(--accent); width: 15px; height: 15px; }
-  #newSessionBtn, #autoplayBtn {
+
+  #newSessionBtn {
     width: 100%;
     border: none;
-    border-radius: 10px;
-    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-family: inherit;
     font-weight: 600;
+    font-size: 13.5px;
     cursor: pointer;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b0d11;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.12s ease, filter 0.12s ease;
   }
-  #newSessionBtn { background: var(--accent); color: #0b1220; }
-  #autoplayBtn {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent-dim);
-  }
-  #newSessionBtn:hover, #autoplayBtn:not(:disabled):hover { filter: brightness(1.15); }
-  #autoplayBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #newSessionBtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  #newSessionBtn:active { transform: translateY(0); }
+
   .profile-box {
     background: var(--panel-2);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
     font-size: 12.5px;
     color: var(--text-dim);
-    line-height: 1.6;
+    line-height: 1.7;
   }
-  .profile-box b { color: var(--text); }
+  .profile-box b { color: var(--text); font-weight: 600; }
   .tag {
     display: inline-block;
-    background: var(--accent-dim);
+    background: var(--accent-soft);
     color: var(--accent);
     border-radius: 20px;
-    padding: 2px 9px;
+    padding: 3px 10px;
     font-size: 11px;
-    margin: 2px 3px 0 0;
+    font-weight: 500;
+    margin: 4px 4px 0 0;
   }
+
   #turnMeter {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12.5px;
+    gap: 10px;
+    font-size: 12px;
     color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
   }
   #turnBar {
     flex: 1;
     height: 6px;
     background: var(--panel-2);
-    border-radius: 4px;
+    border-radius: 6px;
     overflow: hidden;
     border: 1px solid var(--border);
   }
   #turnBarFill {
     height: 100%;
     width: 0%;
-    background: var(--accent);
-    transition: width 0.25s ease;
-  }
-  #usageBox {
-    font-size: 11.5px;
-    color: var(--text-dim);
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 11px;
-    line-height: 1.6;
-    display: none;
-  }
-  #usageBox b { color: var(--text); }
-  .footnote {
-    margin-top: auto;
-    font-size: 11px;
-    color: #6b7280;
-    line-height: 1.6;
-    border-top: 1px solid var(--border);
-    padding-top: 12px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 6px;
+    transition: width 0.3s ease;
   }
 
   /* Main column */
@@ -175,158 +161,138 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+    background: var(--bg);
   }
   #chatHeader {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border-soft);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  #chatHeader .name { font-weight: 600; font-size: 14.5px; }
+  #chatHeader .name { font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
   #chatHeader .status {
     font-size: 12px;
     color: var(--text-dim);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
   }
   .dot {
     width: 7px; height: 7px; border-radius: 50%;
     background: var(--success);
-    box-shadow: 0 0 0 3px rgba(62,207,142,0.15);
+    box-shadow: 0 0 0 4px rgba(62,207,142,0.14);
   }
+
   #chatLog {
     flex: 1;
     overflow-y: auto;
-    padding: 22px 24px;
+    padding: 26px 28px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
   }
+
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    color: var(--text-faint);
+    max-width: 280px;
+  }
+  .empty-state .icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+  .empty-state .title {
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .empty-state .sub {
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+
   .row { display: flex; }
   .row.user { justify-content: flex-end; }
   .row.agent { justify-content: flex-start; }
   .bubble {
-    max-width: 66%;
-    padding: 11px 15px;
-    border-radius: var(--radius);
+    max-width: 64%;
+    padding: 12px 16px;
+    border-radius: var(--radius-lg);
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.55;
     white-space: pre-wrap;
   }
   .row.user .bubble {
     background: var(--user-bubble);
-    color: white;
-    border-bottom-right-radius: 4px;
+    color: #0b0d11;
+    font-weight: 500;
+    border-bottom-right-radius: 6px;
   }
   .row.agent .bubble {
     background: var(--agent-bubble);
     color: var(--text);
-    border-bottom-left-radius: 4px;
+    border: 1px solid var(--border-soft);
+    border-bottom-left-radius: 6px;
   }
-  .agent-block { display: flex; flex-direction: column; gap: 8px; max-width: 78%; }
+  .agent-block { display: flex; flex-direction: column; gap: 10px; max-width: 76%; }
   .chip {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     align-self: flex-start;
-    background: var(--chip);
-    color: var(--chip-text);
+    background: var(--accent-soft);
+    color: var(--accent);
     font-size: 11px;
     font-weight: 600;
-    padding: 3px 10px;
+    padding: 4px 11px;
     border-radius: 20px;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
   }
-  .withheld {
-    align-self: flex-start;
-    font-size: 11.5px;
-    color: var(--warn);
-    background: rgba(227,180,90,0.09);
-    border: 1px solid rgba(227,180,90,0.35);
-    border-radius: 10px;
-    padding: 7px 11px;
-    line-height: 1.5;
-    max-width: 100%;
-  }
-  .usage-line {
-    align-self: flex-start;
-    font-size: 10.8px;
-    color: var(--text-dim);
-  }
+
   .recs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 10px;
     margin-top: 2px;
   }
   .rec-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 9px 11px;
-    cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.1s ease;
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
   }
-  .rec-card:hover { border-color: var(--accent); }
-  .rec-card:active { transform: scale(0.98); }
-  .rec-card.is-target {
-    border-color: var(--success);
-    box-shadow: 0 0 0 1px var(--success);
-  }
-  .rec-card.is-target .rank { color: var(--success); }
-  .target-box {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 12px;
-    font-size: 11.5px;
-    color: var(--text-dim);
-    line-height: 1.5;
-  }
-  .target-box b { color: var(--success); }
-  .hit-banner {
-    align-self: center;
-    background: rgba(62,207,142,0.12);
-    border: 1px solid var(--success);
-    color: var(--success);
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 12.5px;
-    font-weight: 600;
-    text-align: center;
-    max-width: 85%;
-  }
-  .miss-banner {
-    align-self: center;
-    background: rgba(227,180,90,0.10);
-    border: 1px solid var(--warn);
-    color: var(--warn);
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 12.5px;
-    font-weight: 600;
-    text-align: center;
-    max-width: 85%;
+  .rec-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.3);
   }
   .rec-card .rank {
+    display: inline-block;
     font-size: 10.5px;
-    color: var(--text-dim);
+    color: var(--accent);
+    background: var(--accent-soft);
     font-weight: 700;
-    margin-bottom: 3px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
   }
   .rec-card .title {
     font-size: 12.3px;
     color: var(--text);
-    line-height: 1.35;
+    line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
   .rec-card .meta {
-    margin-top: 5px;
+    margin-top: 7px;
     font-size: 10.8px;
     color: var(--text-dim);
     display: flex;
@@ -334,6 +300,7 @@
     gap: 6px;
   }
   .rec-card .price { color: var(--success); font-weight: 600; }
+
   .system-note {
     align-self: center;
     font-size: 11.5px;
@@ -341,39 +308,52 @@
     background: var(--panel-2);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 6px 14px;
+    padding: 7px 15px;
     max-width: 80%;
     text-align: center;
     line-height: 1.5;
     white-space: pre-wrap;
   }
+
   #composer {
-    border-top: 1px solid var(--border);
-    padding: 14px 24px 18px;
+    border-top: 1px solid var(--border-soft);
+    padding: 16px 28px 22px;
     display: flex;
     gap: 10px;
+    align-items: center;
   }
   #msgInput {
     flex: 1;
     background: var(--panel-2);
     border: 1px solid var(--border);
     color: var(--text);
-    border-radius: 12px;
-    padding: 12px 14px;
+    border-radius: 999px;
+    padding: 13px 18px;
     outline: none;
+    font-size: 14px;
+    transition: border-color 0.15s ease;
   }
   #msgInput:focus { border-color: var(--accent); }
+  #msgInput::placeholder { color: var(--text-faint); }
   #sendBtn {
-    background: var(--accent);
-    color: #0b1220;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b0d11;
     border: none;
-    border-radius: 12px;
-    padding: 0 20px;
+    border-radius: 999px;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
     font-weight: 600;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s ease, filter 0.12s ease;
   }
-  #sendBtn:disabled, #msgInput:disabled { opacity: 0.45; cursor: not-allowed; }
-  #sendBtn:not(:disabled):hover { filter: brightness(1.08); }
+  #sendBtn:disabled { opacity: 0.35; cursor: not-allowed; filter: none; }
+  #msgInput:disabled { opacity: 0.6; cursor: not-allowed; }
+  #sendBtn:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
+
   .typing {
     display: flex;
     gap: 4px;
@@ -387,62 +367,30 @@
   .typing span:nth-child(2) { animation-delay: 0.15s; }
   .typing span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+  #chatLog::-webkit-scrollbar, #sidebar::-webkit-scrollbar { width: 8px; }
+  #chatLog::-webkit-scrollbar-thumb, #sidebar::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 8px;
+  }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="sidebar">
-    <div>
+    <div class="brand-box">
       <h1>Shopping Agent</h1>
-      <div class="sub">Local demo against the real 50k-product catalog. Not part of official scoring.</div>
     </div>
 
-    <div>
-      <div class="field-label">Agent</div>
-      <select id="agentSelect"></select>
-      <div id="agentDetail" class="agent-detail"></div>
-    </div>
+    <div class="sidebar-bottom">
+      <button id="newSessionBtn">Start new session</button>
 
-    <div>
-      <div class="field-label">Customer profile</div>
-      <select id="profileSelect"><option value="">Default profile</option></select>
-    </div>
+      <div id="profileBox" class="profile-box">No active session.</div>
 
-    <div>
-      <div class="field-label">Question strategy</div>
-      <select id="askPolicySelect">
-        <option value="other">Same attribute every turn ("other") — scored</option>
-        <option value="split">Distinguishing question (information gain)</option>
-        <option value="rotate">Rotate through attributes</option>
-      </select>
-      <label class="toggle"><input type="checkbox" id="alwaysRecommend" /> Show top 10 after every question</label>
-      <div id="policyNote" class="agent-detail"></div>
-    </div>
-
-    <button id="newSessionBtn">Start new session</button>
-    <button id="autoplayBtn" disabled>▶ Auto-play as simulated customer</button>
-
-    <div id="profileBox" class="profile-box">No active session.</div>
-
-    <div id="targetBox" class="target-box" style="display:none;"></div>
-
-    <div id="turnMeter">
-      <span id="turnLabel">Turn 0/10</span>
-      <div id="turnBar"><div id="turnBarFill"></div></div>
-    </div>
-
-    <div id="usageBox"></div>
-
-    <div class="footnote">
-      Real scoring has no "select" action — the session ends automatically the turn the
-      hidden target ID shows up in the recommendations. Pick a public-set profile (not
-      "Default profile") to test this for real: public_set.jsonl ships its ground truth
-      openly for local development, so this page can reveal the actual target and detect
-      a real hit exactly like the evaluator does. Clicking a card is still just a demo
-      convenience, unrelated to hit detection.
-      <br><br>
-      <b>Auto-play</b> runs the whole session driven by the evaluator's own simulated
-      customer, so the transcript is exactly what the scorer saw.
+      <div id="turnMeter">
+        <span id="turnLabel">Turn 0/10</span>
+        <div id="turnBar"><div id="turnBarFill"></div></div>
+      </div>
     </div>
   </div>
 
@@ -451,10 +399,16 @@
       <div class="name">Session <span id="sessionIdLabel">—</span></div>
       <div class="status"><span class="dot"></span><span id="statusLabel">Ready</span></div>
     </div>
-    <div id="chatLog"></div>
+    <div id="chatLog">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">🏷️</div>
+        <div class="title">No active session</div>
+        <div class="sub">Click "Start new session" to begin chatting with the shopping agent.</div>
+      </div>
+    </div>
     <div id="composer">
-      <input id="msgInput" type="text" placeholder="Start a session to begin chatting…" disabled />
-      <button id="sendBtn" disabled>Send</button>
+      <input id="msgInput" type="text" placeholder="Describe what you're shopping for…" disabled />
+      <button id="sendBtn" disabled aria-label="Send message">➤</button>
     </div>
   </div>
 </div>
@@ -464,24 +418,14 @@ const chatLog = document.getElementById('chatLog');
 const msgInput = document.getElementById('msgInput');
 const sendBtn = document.getElementById('sendBtn');
 const newSessionBtn = document.getElementById('newSessionBtn');
-const autoplayBtn = document.getElementById('autoplayBtn');
-const profileSelect = document.getElementById('profileSelect');
-const agentSelect = document.getElementById('agentSelect');
-const agentDetail = document.getElementById('agentDetail');
-const askPolicySelect = document.getElementById('askPolicySelect');
-const alwaysRecommend = document.getElementById('alwaysRecommend');
-const policyNote = document.getElementById('policyNote');
 const profileBox = document.getElementById('profileBox');
 const turnLabel = document.getElementById('turnLabel');
 const turnBarFill = document.getElementById('turnBarFill');
 const sessionIdLabel = document.getElementById('sessionIdLabel');
 const statusLabel = document.getElementById('statusLabel');
-const targetBox = document.getElementById('targetBox');
-const usageBox = document.getElementById('usageBox');
 
 let sessionId = null;
 let ended = false;
-let agents = [];
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -501,17 +445,6 @@ function addUserMessage(text) {
 
 function addSystemNote(text) {
   chatLog.appendChild(el('div', 'system-note', text));
-  scrollToBottom();
-}
-
-function addHitBanner(rank, turn) {
-  chatLog.appendChild(el('div', 'hit-banner',
-    '🎯 Real hit at rank #' + rank + ', turn ' + turn + ' — in actual scoring this session ends here.'));
-  scrollToBottom();
-}
-
-function addMissBanner(text) {
-  chatLog.appendChild(el('div', 'miss-banner', text));
   scrollToBottom();
 }
 
@@ -547,50 +480,25 @@ function addAgentTurn(data) {
     block.appendChild(el('div', 'chip', '❓ asking about: ' + data.ask_attribute));
   }
 
-  if (data.withheld) {
-    block.appendChild(el('div', 'withheld',
-      'No list this turn — on purpose. The session ends at the first hit and freezes MRR at that ' +
-      'rank, so the agent gathers one more constraint rather than guessing. It always recommends ' +
-      'from turn 4 on.'));
-  }
-
   if (data.recommendations && data.recommendations.length) {
     const grid = el('div', 'recs');
     data.recommendations.forEach((rec, i) => {
-      const card = el('div', rec.is_target ? 'rec-card is-target' : 'rec-card');
-      card.appendChild(el('div', 'rank', (rec.is_target ? '🎯 ' : '') + '#' + (i + 1) + '  ·  ' + rec.parent_asin));
+      const card = el('div', 'rec-card');
+      card.appendChild(el('div', 'rank', '#' + (i + 1)));
       card.appendChild(el('div', 'title', rec.title || '(untitled)'));
       const meta = el('div', 'meta');
       const price = fmtPrice(rec.price);
       meta.appendChild(el('span', null, rec.store || ''));
       if (price) meta.appendChild(el('span', 'price', price));
       card.appendChild(meta);
-      card.addEventListener('click', () => selectRecommendation(rec, i + 1));
       grid.appendChild(card);
     });
     block.appendChild(grid);
   }
 
-  if (data.usage && (data.usage.prompt_tokens || data.usage.completion_tokens)) {
-    block.appendChild(el('div', 'usage-line',
-      'this turn: ' + data.usage.prompt_tokens + ' in / ' + data.usage.completion_tokens + ' out tokens'));
-  }
-
   row.appendChild(block);
   chatLog.appendChild(row);
   scrollToBottom();
-}
-
-function selectRecommendation(rec, rank) {
-  addSystemNote(
-    'You picked #' + rank + ': ' + rec.parent_asin + ' — ' + (rec.title || '').slice(0, 70) +
-    '\n(Demo only — real scoring has no select action; it ends automatically ' +
-    'when the hidden target ID matches something the agent already returned.)'
-  );
-}
-
-function currentOptions() {
-  return { ask_policy: askPolicySelect.value, always_recommend: alwaysRecommend.checked };
 }
 
 function renderProfile(p) {
@@ -603,72 +511,6 @@ function renderProfile(p) {
     (tags ? '<br><br>' + tags : '');
 }
 
-function renderUsage(usage) {
-  if (!usage) { usageBox.style.display = 'none'; return; }
-  usageBox.style.display = 'block';
-  usageBox.innerHTML =
-    '<b>Model usage</b><br>' + usage.model + '<br>' +
-    usage.calls + ' calls · ' + usage.cache_hits + ' cached · ' + usage.failures + ' failed<br>' +
-    usage.input_tokens + ' in / ' + usage.output_tokens + ' out<br>' +
-    '≈ $' + Number(usage.estimated_cost_usd).toFixed(4);
-}
-
-async function loadAgents() {
-  const res = await fetch('/api/agents');
-  const data = await res.json();
-  agents = data.agents || [];
-  agents.forEach(a => {
-    const opt = el('option', null, a.label + (a.available ? '' : '  (key not set)'));
-    opt.value = a.id;
-    agentSelect.appendChild(opt);
-  });
-  updateAgentDetail();
-}
-
-function updateAgentDetail() {
-  const a = agents.find(x => x.id === agentSelect.value);
-  agentDetail.textContent = a ? a.detail : '';
-}
-
-// Measured on the full 200-session public set with the official evaluator
-// (python sweep_policy.py). Hit Rate is 1.0 in every combination; the cost is
-// all in MRR, because the session ends at the first hit.
-const POLICY_TS = {
-  'other|false':  ['0.9532', 'shipped configuration'],
-  'other|true':   ['0.9030', 'costs 0.050 — hits early at a worse rank'],
-  'split|false':  ['0.9407', 'costs 0.013 — a specific attribute drains fewer constraints per turn'],
-  'split|true':   ['0.9041', 'costs 0.049'],
-  'rotate|false': ['0.9075', 'costs 0.046'],
-  'rotate|true':  ['0.8943', 'costs 0.059'],
-};
-
-function updatePolicyNote() {
-  const key = askPolicySelect.value + '|' + alwaysRecommend.checked;
-  const [ts, why] = POLICY_TS[key] || ['—', ''];
-  const isShipped = key === 'other|false';
-  policyNote.innerHTML = 'Public-set TechnicalScore ' +
-    (isShipped ? '<b style="color:var(--success)">' + ts + '</b>' : '<b>' + ts + '</b>') +
-    ' — ' + why + '.';
-}
-
-async function loadSamples() {
-  const res = await fetch('/api/samples');
-  const data = await res.json();
-  (data.samples || []).forEach(s => {
-    const opt = el('option', null, s.sample_id + '  (' + s.scenario_type + ', ' + s.difficulty_bucket + ')');
-    opt.value = s.sample_id;
-    profileSelect.appendChild(opt);
-  });
-  updateAutoplayState();
-}
-
-function updateAutoplayState() {
-  autoplayBtn.disabled = !profileSelect.value;
-  autoplayBtn.title = profileSelect.value
-    ? 'Run the full scored session with the simulated customer'
-    : 'Pick a public-set profile first — auto-play needs a hidden target';
-}
-
 async function startSession() {
   chatLog.innerHTML = '';
   ended = false;
@@ -676,41 +518,23 @@ async function startSession() {
   const res = await fetch('/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sample_id: profileSelect.value || null,
-      agent: agentSelect.value,
-      options: currentOptions(),
-    }),
+    body: JSON.stringify({}),
   });
   const data = await res.json();
   sessionId = data.session_id;
-  sessionIdLabel.textContent = sessionId + ' · ' + (data.agent_label || data.agent);
+  sessionIdLabel.textContent = sessionId;
   statusLabel.textContent = 'Ready';
 
   renderProfile(data.profile);
-
-  if (data.target) {
-    targetBox.style.display = 'block';
-    targetBox.innerHTML =
-      '<b>🎯 Test target (this session\'s real answer):</b><br>' +
-      data.target.parent_asin + '<br>' + (data.target.title || '').slice(0, 90);
-  } else {
-    targetBox.style.display = 'none';
-    targetBox.innerHTML = '';
-  }
 
   turnLabel.textContent = 'Turn 0/10';
   turnBarFill.style.width = '0%';
 
   msgInput.disabled = false;
   sendBtn.disabled = false;
-  msgInput.placeholder = 'Describe what you\'re shopping for…';
   msgInput.focus();
 
-  addSystemNote('New session with ' + (data.agent_label || data.agent) +
-    (data.sample_id ? ' and profile ' + data.sample_id : ' and the default profile') + '.' +
-    (data.target ? ' Real target revealed in the sidebar — try to guide the agent to it.'
-                 : ' No real target (default profile) — pick a public-set profile to test hit detection.'));
+  addSystemNote('New session started.');
 }
 
 async function sendMessage() {
@@ -735,17 +559,10 @@ async function sendMessage() {
       addSystemNote('Error: ' + data.error);
     } else {
       addAgentTurn(data);
-      renderUsage(data.llm_usage);
       turnLabel.textContent = 'Turn ' + data.turn + '/' + data.max_turns;
       turnBarFill.style.width = Math.min(100, (data.turn / data.max_turns) * 100) + '%';
-      if (data.hit) {
-        addHitBanner(data.hit_rank, data.turn);
+      if (data.ended) {
         ended = true;
-      } else if (data.ended) {
-        ended = true;
-        addMissBanner(data.has_target
-          ? 'Reached turn 10 without hitting the real target — this session would score a miss.'
-          : 'Reached turn 10 — no real target loaded (default profile), so hit/miss can\'t be checked here.');
       }
     }
   } catch (e) {
@@ -760,86 +577,14 @@ async function sendMessage() {
   }
 }
 
-async function autoplay() {
-  const sampleId = profileSelect.value;
-  if (!sampleId) return;
-  chatLog.innerHTML = '';
-  ended = true;
-  sessionId = null;
-  msgInput.disabled = true;
-  sendBtn.disabled = true;
-  autoplayBtn.disabled = true;
-  statusLabel.textContent = 'Auto-playing…';
-  addSystemNote('Auto-play: the evaluator\'s own simulated customer is driving this session. '
-    + 'First run of an agent builds its index and takes ~20s.');
-  addTypingIndicator();
-
-  try {
-    const res = await fetch('/api/autoplay', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sample_id: sampleId, agent: agentSelect.value, options: currentOptions() }),
-    });
-    const data = await res.json();
-    removeTypingIndicator();
-    if (data.error) { addSystemNote('Error: ' + data.error); statusLabel.textContent = 'Ready'; autoplayBtn.disabled = false; return; }
-
-    sessionIdLabel.textContent = data.sample_id + ' · ' + data.agent_label;
-    renderProfile(data.profile);
-    targetBox.style.display = 'block';
-    targetBox.innerHTML =
-      '<b>🎯 Hidden target:</b><br>' + data.target.parent_asin + '<br>' +
-      (data.target.title || '').slice(0, 90) +
-      '<br><br><b>Hidden intent card</b><br>hard: ' +
-      (data.intent_card.hard_constraints || []).join(' · ').slice(0, 160);
-
-    addSystemNote(data.sample_id + ' — ' + data.scenario_type + ' / ' + data.difficulty_bucket);
-
-    data.turns.forEach(t => {
-      addUserMessage(t.user);
-      addAgentTurn(t);
-      if (t.override_pending && t.recommendations.some(r => r.is_target)) {
-        addSystemNote('Target is already in the list, but this is an intent_override session — '
-          + 'the evaluator does not count a hit until the override message fires.');
-      }
-    });
-
-    turnLabel.textContent = 'Turn ' + data.turns.length + '/10';
-    turnBarFill.style.width = Math.min(100, (data.turns.length / 10) * 100) + '%';
-
-    if (data.hit) {
-      addHitBanner(data.hit_rank, data.hit_turn);
-      addSystemNote('Scored: hit at turn ' + data.hit_turn + ', rank ' + data.hit_rank +
-        ', reciprocal rank ' + data.reciprocal_rank + '.');
-    } else {
-      addMissBanner('Miss — the target never entered the top 10 in 10 turns (scores RR 0, MTTC 11).');
-    }
-    renderUsage(data.llm_usage);
-  } catch (e) {
-    removeTypingIndicator();
-    addSystemNote('Request failed: ' + e);
-  }
-  statusLabel.textContent = 'Ready';
-  autoplayBtn.disabled = false;
-}
-
 newSessionBtn.addEventListener('click', startSession);
-autoplayBtn.addEventListener('click', autoplay);
 sendBtn.addEventListener('click', sendMessage);
-agentSelect.addEventListener('change', updateAgentDetail);
-askPolicySelect.addEventListener('change', updatePolicyNote);
-alwaysRecommend.addEventListener('change', updatePolicyNote);
-profileSelect.addEventListener('change', updateAutoplayState);
 msgInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.keyCode === 13) {
     e.preventDefault();
     sendMessage();
   }
 });
-
-updatePolicyNote();
-loadAgents();
-loadSamples();
 </script>
 </body>
 </html>
