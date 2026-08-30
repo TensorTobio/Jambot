@@ -271,6 +271,11 @@
     transform: translateY(-2px);
     box-shadow: 0 8px 18px rgba(0,0,0,0.3);
   }
+  .rec-card.is-target {
+    border-color: var(--success);
+    box-shadow: 0 0 0 1px var(--success);
+  }
+  .rec-card.is-target .rank { background: rgba(143,170,93,0.18); color: var(--success); }
   .rec-card .rank {
     display: inline-block;
     font-size: 10.5px;
@@ -314,6 +319,91 @@
     line-height: 1.5;
     white-space: pre-wrap;
   }
+  .hit-banner {
+    align-self: center;
+    background: rgba(143,170,93,0.14);
+    border: 1px solid var(--success);
+    color: var(--success);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-align: center;
+    max-width: 85%;
+  }
+
+  /* Dev-testing additions: sample/agent pickers, target reveal, autoplay */
+  .field-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  select {
+    width: 100%;
+    font-family: inherit;
+    font-size: 12.5px;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 10px;
+  }
+  select:disabled { opacity: 0.5; }
+  .target-box {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .target-box b { color: var(--success); }
+  .agent-note {
+    font-size: 11px;
+    color: var(--text-faint);
+    line-height: 1.5;
+  }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  #autoplayBtn {
+    width: 100%;
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  #autoplayBtn:hover { background: var(--accent-soft); }
+  #autoplayBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .transcript-summary {
+    align-self: center;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 18px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    max-width: 90%;
+    text-align: center;
+  }
+  .transcript-summary b { color: var(--text); }
+  .transcript-summary.hit { border-color: var(--success); }
+  .transcript-summary.hit b.hit-flag { color: var(--success); }
+  .transcript-summary.miss b.hit-flag { color: var(--warn); }
 
   #composer {
     border-top: 1px solid var(--border-soft);
@@ -383,9 +473,36 @@
     </div>
 
     <div class="sidebar-bottom">
-      <button id="newSessionBtn">Start new session</button>
+      <div>
+        <div class="field-label">Test profile</div>
+        <select id="sampleSelect"><option value="">Random / default profile</option></select>
+      </div>
+
+      <div>
+        <div class="field-label">Agent</div>
+        <select id="agentSelect"></select>
+        <div id="agentNote" class="agent-note"></div>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="alwaysRecommendChk" />
+        Always show top 10 (demo only, costs MRR)
+      </label>
+
+      <div>
+        <div class="field-label">Question strategy (demo only)</div>
+        <select id="policySelect">
+          <option value="other">other (shipped / highest score)</option>
+          <option value="split">split (information-gain pick)</option>
+          <option value="rotate">rotate (cycle attributes)</option>
+        </select>
+      </div>
+
+      <button id="newSessionBtn">Start new session (manual chat)</button>
+      <button id="autoplayBtn" disabled title="Pick a test profile above to enable">Auto-play this profile (scored transcript)</button>
 
       <div id="profileBox" class="profile-box">No active session.</div>
+      <div id="targetBox" class="target-box" style="display:none;"></div>
 
       <div id="turnMeter">
         <span id="turnLabel">Turn 0/10</span>
@@ -423,9 +540,72 @@ const turnLabel = document.getElementById('turnLabel');
 const turnBarFill = document.getElementById('turnBarFill');
 const sessionIdLabel = document.getElementById('sessionIdLabel');
 const statusLabel = document.getElementById('statusLabel');
+const sampleSelect = document.getElementById('sampleSelect');
+const agentSelect = document.getElementById('agentSelect');
+const agentNote = document.getElementById('agentNote');
+const alwaysRecommendChk = document.getElementById('alwaysRecommendChk');
+const policySelect = document.getElementById('policySelect');
+const autoplayBtn = document.getElementById('autoplayBtn');
+const targetBox = document.getElementById('targetBox');
 
 let sessionId = null;
 let ended = false;
+
+function currentOptions() {
+  return {
+    ask_policy: policySelect.value,
+    always_recommend: alwaysRecommendChk.checked,
+  };
+}
+
+function showTarget(target) {
+  if (!target) {
+    targetBox.style.display = 'none';
+    targetBox.innerHTML = '';
+    return;
+  }
+  targetBox.style.display = 'block';
+  targetBox.innerHTML =
+    '<b>\u{1F3AF} Real target (public set):</b><br>' +
+    target.parent_asin + '<br>' + (target.title || '').slice(0, 100);
+}
+
+async function loadSamples() {
+  const res = await fetch('/api/samples');
+  const data = await res.json();
+  (data.samples || []).forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.sample_id;
+    opt.textContent = s.sample_id + '  (' + s.scenario_type + ', ' + s.difficulty_bucket + ')';
+    sampleSelect.appendChild(opt);
+  });
+}
+
+async function loadAgents() {
+  const res = await fetch('/api/agents');
+  const data = await res.json();
+  agentSelect.innerHTML = '';
+  (data.agents || []).forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.label + (a.available ? '' : '  (unavailable)');
+    opt.disabled = !a.available;
+    agentSelect.appendChild(opt);
+  });
+  agentSelect.addEventListener('change', () => {
+    const a = (data.agents || []).find(x => x.id === agentSelect.value);
+    agentNote.textContent = a ? a.detail : '';
+  });
+  if (agentSelect.options.length) {
+    agentSelect.selectedIndex = 0;
+    agentNote.textContent = data.agents[0].detail;
+  }
+}
+
+sampleSelect.addEventListener('change', () => {
+  autoplayBtn.disabled = !sampleSelect.value;
+  autoplayBtn.title = sampleSelect.value ? '' : 'Pick a test profile above to enable';
+});
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -470,6 +650,12 @@ function fmtPrice(p) {
   return '$' + Number(p).toFixed(2);
 }
 
+function addHitBanner(rank, turn) {
+  chatLog.appendChild(el('div', 'hit-banner',
+    '\u{1F3AF} Real hit at rank #' + rank + ', turn ' + turn + ' — session ends here in real scoring.'));
+  scrollToBottom();
+}
+
 function addAgentTurn(data) {
   const row = el('div', 'row agent');
   const block = el('div', 'agent-block');
@@ -480,11 +666,13 @@ function addAgentTurn(data) {
     block.appendChild(el('div', 'chip', '❓ asking about: ' + data.ask_attribute));
   }
 
-  if (data.recommendations && data.recommendations.length) {
+  if (data.withheld) {
+    block.appendChild(el('div', 'chip', '⏸️ No list this turn — on purpose (protecting MRR until confident)'));
+  } else if (data.recommendations && data.recommendations.length) {
     const grid = el('div', 'recs');
     data.recommendations.forEach((rec, i) => {
-      const card = el('div', 'rec-card');
-      card.appendChild(el('div', 'rank', '#' + (i + 1)));
+      const card = el('div', rec.is_target ? 'rec-card is-target' : 'rec-card');
+      card.appendChild(el('div', 'rank', (rec.is_target ? '\u{1F3AF} ' : '') + '#' + (i + 1)));
       card.appendChild(el('div', 'title', rec.title || '(untitled)'));
       const meta = el('div', 'meta');
       const price = fmtPrice(rec.price);
@@ -518,14 +706,24 @@ async function startSession() {
   const res = await fetch('/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
+    body: JSON.stringify({
+      sample_id: sampleSelect.value || null,
+      agent: agentSelect.value || 'rules',
+      options: currentOptions(),
+    }),
   });
   const data = await res.json();
+  if (data.error) {
+    statusLabel.textContent = 'Error';
+    addSystemNote('Error: ' + data.error);
+    return;
+  }
   sessionId = data.session_id;
   sessionIdLabel.textContent = sessionId;
-  statusLabel.textContent = 'Ready';
+  statusLabel.textContent = 'Ready — ' + (data.agent_label || data.agent);
 
   renderProfile(data.profile);
+  showTarget(data.target);
 
   turnLabel.textContent = 'Turn 0/10';
   turnBarFill.style.width = '0%';
@@ -534,7 +732,8 @@ async function startSession() {
   sendBtn.disabled = false;
   msgInput.focus();
 
-  addSystemNote('New session started.');
+  addSystemNote('New session started with ' + (data.agent_label || data.agent) +
+    (data.sample_id ? ', profile ' + data.sample_id + '. Real target revealed in the sidebar.' : ', default profile.'));
 }
 
 async function sendMessage() {
@@ -561,8 +760,14 @@ async function sendMessage() {
       addAgentTurn(data);
       turnLabel.textContent = 'Turn ' + data.turn + '/' + data.max_turns;
       turnBarFill.style.width = Math.min(100, (data.turn / data.max_turns) * 100) + '%';
-      if (data.ended) {
+      if (data.hit) {
+        addHitBanner(data.hit_rank, data.turn);
         ended = true;
+      } else if (data.ended) {
+        ended = true;
+        if (data.has_target) {
+          addSystemNote('Reached turn 10 without hitting the real target — this session would score a miss.');
+        }
       }
     }
   } catch (e) {
@@ -577,14 +782,78 @@ async function sendMessage() {
   }
 }
 
+async function runAutoplay() {
+  const sampleId = sampleSelect.value;
+  if (!sampleId) return;
+  chatLog.innerHTML = '';
+  ended = true; // auto-play is a read-only replay, not an interactive session
+  sessionId = null;
+  statusLabel.textContent = 'Running auto-play…';
+  msgInput.disabled = true;
+  sendBtn.disabled = true;
+
+  const res = await fetch('/api/autoplay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sample_id: sampleId,
+      agent: agentSelect.value || 'rules',
+      options: currentOptions(),
+    }),
+  });
+  const data = await res.json();
+  if (data.error) {
+    addSystemNote('Error: ' + data.error);
+    statusLabel.textContent = 'Error';
+    return;
+  }
+
+  sessionIdLabel.textContent = data.sample_id + ' (auto-play)';
+  statusLabel.textContent = 'Auto-play — ' + (data.agent_label || data.agent);
+  renderProfile(data.profile);
+  showTarget(data.target);
+
+  addSystemNote('Auto-play: the evaluator\'s own scripted customer, driving ' +
+    (data.agent_label || data.agent) + ' on ' + data.sample_id +
+    ' (' + data.scenario_type + ', ' + data.difficulty_bucket + ').');
+
+  data.turns.forEach(turn => {
+    addUserMessage(turn.user);
+    addAgentTurn(turn);
+    const targetIdx = turn.recommendations.findIndex(r => r.is_target);
+    if (turn.scored_hit) {
+      addHitBanner(targetIdx + 1, turn.turn);
+    } else if (turn.override_pending && targetIdx !== -1) {
+      addSystemNote('Target is already in the list, but this is an intent-override session — ' +
+        'the evaluator won\'t count a hit until the override fires on a later turn.');
+    }
+  });
+
+  turnLabel.textContent = 'Turn ' + data.turns.length + '/10';
+  turnBarFill.style.width = Math.min(100, (data.turns.length / 10) * 100) + '%';
+
+  const verdict = data.hit
+    ? '<b class="hit-flag">HIT</b> at turn <b>' + data.hit_turn + '</b>, rank <b>#' + data.hit_rank +
+      '</b> (reciprocal rank ' + data.reciprocal_rank + ')'
+    : '<b class="hit-flag">MISS</b> — target never reached in 10 turns';
+  const summary = el('div', 'transcript-summary' + (data.hit ? ' hit' : ' miss'));
+  summary.innerHTML = 'Auto-play finished — ' + verdict;
+  chatLog.appendChild(summary);
+  scrollToBottom();
+}
+
 newSessionBtn.addEventListener('click', startSession);
 sendBtn.addEventListener('click', sendMessage);
+autoplayBtn.addEventListener('click', runAutoplay);
 msgInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.keyCode === 13) {
     e.preventDefault();
     sendMessage();
   }
 });
+
+loadSamples();
+loadAgents();
 </script>
 </body>
 </html>
