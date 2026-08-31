@@ -4,8 +4,8 @@ Answers two questions with numbers instead of intuition:
 
 1. Does asking a *different, distinguishing* question each turn beat asking
    "other" every turn?
-2. Does printing a top-10 after every question beat holding one back until the
-   evidence is sharp?
+2. Does printing a top-10 after every question beat opening with a single
+   best guess and only widening the list once the questions dry up?
 
 Builds the catalog index once and reuses it across all runs.
 
@@ -35,11 +35,11 @@ index = CatalogIndex(CATALOG)
 print(f"index ready: {len(index.asins)} products\n", flush=True)
 
 CONFIGS = [
-    ("other  + hold back  (shipped)", "other", False),
+    ("other  + short list (shipped)", "other", False),
     ("other  + always show", "other", True),
-    ("split  + hold back", "split", False),
+    ("split  + short list", "split", False),
     ("split  + always show", "split", True),
-    ("rotate + hold back", "rotate", False),
+    ("rotate + short list", "rotate", False),
     ("rotate + always show", "rotate", True),
 ]
 

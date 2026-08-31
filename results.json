@@ -1,10 +1,10 @@
 {
   "sample_count": 200,
   "hit_rate_at_10": 1.0,
-  "mrr": 0.969917,
-  "mttc": 2.89,
-  "efficiency": 0.811,
-  "recommended_technical_score": 0.953175,
+  "mrr": 0.98,
+  "mttc": 2.01,
+  "efficiency": 0.899,
+  "recommended_technical_score": 0.9738,
   "reported_token_usage": {
     "prompt_tokens": 0,
     "completion_tokens": 0,
@@ -15,25 +15,25 @@
       "sample_count": 10,
       "hit_rate_at_10": 1.0,
       "mrr": 1.0,
-      "mttc": 3.7
+      "mttc": 2.7
     },
     "browsing": {
       "sample_count": 80,
       "hit_rate_at_10": 1.0,
-      "mrr": 0.951875,
-      "mttc": 2.775
+      "mrr": 0.96875,
+      "mttc": 1.8375
     },
     "buying": {
       "sample_count": 80,
       "hit_rate_at_10": 1.0,
-      "mrr": 0.98125,
-      "mttc": 2.6
+      "mrr": 0.989583,
+      "mttc": 1.475
     },
     "intent_override": {
       "sample_count": 30,
       "hit_rate_at_10": 1.0,
       "mrr": 0.977778,
-      "mttc": 3.7
+      "mttc": 3.666667
     }
   },
   "sessions": [
@@ -41,7 +41,7 @@
       "sample_id": "public_0001",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -73,7 +73,7 @@
       "sample_id": "public_0005",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -81,7 +81,7 @@
       "sample_id": "public_0006",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -97,7 +97,7 @@
       "sample_id": "public_0008",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -113,7 +113,7 @@
       "sample_id": "public_0010",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -129,7 +129,7 @@
       "sample_id": "public_0012",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -145,7 +145,7 @@
       "sample_id": "public_0014",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -153,7 +153,7 @@
       "sample_id": "public_0015",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -161,7 +161,7 @@
       "sample_id": "public_0016",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -169,7 +169,7 @@
       "sample_id": "public_0017",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -185,7 +185,7 @@
       "sample_id": "public_0019",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -201,7 +201,7 @@
       "sample_id": "public_0021",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -209,7 +209,7 @@
       "sample_id": "public_0022",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -233,7 +233,7 @@
       "sample_id": "public_0025",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -241,7 +241,7 @@
       "sample_id": "public_0026",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -249,7 +249,7 @@
       "sample_id": "public_0027",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -257,7 +257,7 @@
       "sample_id": "public_0028",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -273,7 +273,7 @@
       "sample_id": "public_0030",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -281,7 +281,7 @@
       "sample_id": "public_0031",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -289,7 +289,7 @@
       "sample_id": "public_0032",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -297,7 +297,7 @@
       "sample_id": "public_0033",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -313,7 +313,7 @@
       "sample_id": "public_0035",
       "scenario_type": "boundary",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -321,7 +321,7 @@
       "sample_id": "public_0036",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -329,7 +329,7 @@
       "sample_id": "public_0037",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -345,7 +345,7 @@
       "sample_id": "public_0039",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -353,7 +353,7 @@
       "sample_id": "public_0040",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -369,7 +369,7 @@
       "sample_id": "public_0042",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -385,7 +385,7 @@
       "sample_id": "public_0044",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -393,7 +393,7 @@
       "sample_id": "public_0045",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -409,7 +409,7 @@
       "sample_id": "public_0047",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -417,7 +417,7 @@
       "sample_id": "public_0048",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -425,7 +425,7 @@
       "sample_id": "public_0049",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -457,7 +457,7 @@
       "sample_id": "public_0053",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -489,7 +489,7 @@
       "sample_id": "public_0057",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -497,7 +497,7 @@
       "sample_id": "public_0058",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -505,7 +505,7 @@
       "sample_id": "public_0059",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -513,7 +513,7 @@
       "sample_id": "public_0060",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -521,7 +521,7 @@
       "sample_id": "public_0061",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -529,7 +529,7 @@
       "sample_id": "public_0062",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -553,7 +553,7 @@
       "sample_id": "public_0065",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -561,7 +561,7 @@
       "sample_id": "public_0066",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -569,7 +569,7 @@
       "sample_id": "public_0067",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -593,7 +593,7 @@
       "sample_id": "public_0070",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -625,7 +625,7 @@
       "sample_id": "public_0074",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -642,14 +642,14 @@
       "scenario_type": "browsing",
       "hit": true,
       "first_hit_turn": 4,
-      "best_rank": 5,
-      "reciprocal_rank": 0.2
+      "best_rank": 4,
+      "reciprocal_rank": 0.25
     },
     {
       "sample_id": "public_0077",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -665,7 +665,7 @@
       "sample_id": "public_0079",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -681,7 +681,7 @@
       "sample_id": "public_0081",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -697,7 +697,7 @@
       "sample_id": "public_0083",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -729,15 +729,15 @@
       "sample_id": "public_0087",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
-      "best_rank": 5,
-      "reciprocal_rank": 0.2
+      "first_hit_turn": 2,
+      "best_rank": 1,
+      "reciprocal_rank": 1.0
     },
     {
       "sample_id": "public_0088",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -761,7 +761,7 @@
       "sample_id": "public_0091",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -769,7 +769,7 @@
       "sample_id": "public_0092",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 3,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -801,7 +801,7 @@
       "sample_id": "public_0096",
       "scenario_type": "intent_override",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 3,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -817,7 +817,7 @@
       "sample_id": "public_0098",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -833,7 +833,7 @@
       "sample_id": "public_0100",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -841,7 +841,7 @@
       "sample_id": "public_0101",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -865,7 +865,7 @@
       "sample_id": "public_0104",
       "scenario_type": "boundary",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -873,7 +873,7 @@
       "sample_id": "public_0105",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -889,7 +889,7 @@
       "sample_id": "public_0107",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -897,7 +897,7 @@
       "sample_id": "public_0108",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -905,7 +905,7 @@
       "sample_id": "public_0109",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -921,7 +921,7 @@
       "sample_id": "public_0111",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -929,7 +929,7 @@
       "sample_id": "public_0112",
       "scenario_type": "boundary",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 3,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -953,7 +953,7 @@
       "sample_id": "public_0115",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -961,7 +961,7 @@
       "sample_id": "public_0116",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -969,7 +969,7 @@
       "sample_id": "public_0117",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -977,7 +977,7 @@
       "sample_id": "public_0118",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1001,7 +1001,7 @@
       "sample_id": "public_0121",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1025,7 +1025,7 @@
       "sample_id": "public_0124",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1041,7 +1041,7 @@
       "sample_id": "public_0126",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1049,7 +1049,7 @@
       "sample_id": "public_0127",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1057,7 +1057,7 @@
       "sample_id": "public_0128",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1081,7 +1081,7 @@
       "sample_id": "public_0131",
       "scenario_type": "boundary",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1089,7 +1089,7 @@
       "sample_id": "public_0132",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1105,7 +1105,7 @@
       "sample_id": "public_0134",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1113,7 +1113,7 @@
       "sample_id": "public_0135",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1121,7 +1121,7 @@
       "sample_id": "public_0136",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1129,7 +1129,7 @@
       "sample_id": "public_0137",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1137,7 +1137,7 @@
       "sample_id": "public_0138",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1153,9 +1153,9 @@
       "sample_id": "public_0140",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
-      "best_rank": 2,
-      "reciprocal_rank": 0.5
+      "first_hit_turn": 2,
+      "best_rank": 1,
+      "reciprocal_rank": 1.0
     },
     {
       "sample_id": "public_0141",
@@ -1177,7 +1177,7 @@
       "sample_id": "public_0143",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1193,7 +1193,7 @@
       "sample_id": "public_0145",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1209,7 +1209,7 @@
       "sample_id": "public_0147",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1217,7 +1217,7 @@
       "sample_id": "public_0148",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1225,7 +1225,7 @@
       "sample_id": "public_0149",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1233,7 +1233,7 @@
       "sample_id": "public_0150",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1241,7 +1241,7 @@
       "sample_id": "public_0151",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1257,7 +1257,7 @@
       "sample_id": "public_0153",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1265,7 +1265,7 @@
       "sample_id": "public_0154",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1273,7 +1273,7 @@
       "sample_id": "public_0155",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1289,7 +1289,7 @@
       "sample_id": "public_0157",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1305,7 +1305,7 @@
       "sample_id": "public_0159",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1313,7 +1313,7 @@
       "sample_id": "public_0160",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1321,15 +1321,15 @@
       "sample_id": "public_0161",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
-      "best_rank": 3,
-      "reciprocal_rank": 0.3333333333333333
+      "first_hit_turn": 2,
+      "best_rank": 1,
+      "reciprocal_rank": 1.0
     },
     {
       "sample_id": "public_0162",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1353,7 +1353,7 @@
       "sample_id": "public_0165",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1369,7 +1369,7 @@
       "sample_id": "public_0167",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1393,7 +1393,7 @@
       "sample_id": "public_0170",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 3,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1409,7 +1409,7 @@
       "sample_id": "public_0172",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 4,
       "best_rank": 2,
       "reciprocal_rank": 0.5
     },
@@ -1417,7 +1417,7 @@
       "sample_id": "public_0173",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1425,7 +1425,7 @@
       "sample_id": "public_0174",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1441,7 +1441,7 @@
       "sample_id": "public_0176",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1457,7 +1457,7 @@
       "sample_id": "public_0178",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1473,7 +1473,7 @@
       "sample_id": "public_0180",
       "scenario_type": "boundary",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 3,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1481,7 +1481,7 @@
       "sample_id": "public_0181",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1489,7 +1489,7 @@
       "sample_id": "public_0182",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1545,7 +1545,7 @@
       "sample_id": "public_0189",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1553,7 +1553,7 @@
       "sample_id": "public_0190",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1561,7 +1561,7 @@
       "sample_id": "public_0191",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1577,7 +1577,7 @@
       "sample_id": "public_0193",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1585,7 +1585,7 @@
       "sample_id": "public_0194",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 4,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1593,7 +1593,7 @@
       "sample_id": "public_0195",
       "scenario_type": "browsing",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1625,7 +1625,7 @@
       "sample_id": "public_0199",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 3,
+      "first_hit_turn": 2,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     },
@@ -1633,7 +1633,7 @@
       "sample_id": "public_0200",
       "scenario_type": "buying",
       "hit": true,
-      "first_hit_turn": 2,
+      "first_hit_turn": 1,
       "best_rank": 1,
       "reciprocal_rank": 1.0
     }

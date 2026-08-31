@@ -39,7 +39,7 @@
   }
   #app {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 340px 1fr;
     height: 100vh;
   }
 
@@ -94,7 +94,7 @@
     gap: 16px;
   }
 
-  #newSessionBtn {
+  #newSessionBtn, #autoplayBtn {
     width: 100%;
     border: none;
     border-radius: var(--radius-md);
@@ -108,8 +108,13 @@
     box-shadow: var(--shadow-soft);
     transition: transform 0.12s ease, filter 0.12s ease;
   }
-  #newSessionBtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
-  #newSessionBtn:active { transform: translateY(0); }
+  #newSessionBtn:hover, #autoplayBtn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+  #newSessionBtn:active, #autoplayBtn:active { transform: translateY(0); }
+  #autoplayBtn {
+    background: transparent; border: 1px solid var(--accent);
+    color: var(--accent); box-shadow: none;
+  }
+  #autoplayBtn:disabled { opacity: 0.4; cursor: default; border-color: var(--border); color: var(--text-faint); }
 
   .profile-box {
     background: var(--panel-2);
@@ -368,6 +373,94 @@
   .typing span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
 
+  /* Pickers + the ground-truth panels */
+  .side-section { display: flex; flex-direction: column; gap: 7px; }
+  .side-label {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--text-faint); font-weight: 700;
+  }
+  .side-label .hint {
+    text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 10.5px;
+  }
+  #sidebar select {
+    width: 100%; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 10px; font-family: inherit; font-size: 12.5px; cursor: pointer;
+  }
+  #sidebar select:focus { outline: none; border-color: var(--accent); }
+  #sidebar select:disabled { opacity: 0.5; cursor: default; }
+  .mini-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 20px; padding: 2px 9px; font-family: inherit; font-size: 10px;
+    font-weight: 600; cursor: pointer; text-transform: none; letter-spacing: 0;
+  }
+  .mini-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .spoiler .spoiler-inner { filter: blur(5px); user-select: none; }
+  .spoiler.revealed .spoiler-inner { filter: none; user-select: auto; }
+  #keyInput {
+    width: 100%; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 10px; font-family: inherit; font-size: 12.5px;
+  }
+  #keyInput:focus { outline: none; border-color: var(--accent); }
+  .btn-row { display: flex; gap: 6px; }
+  .key-ok { color: var(--success); }
+  .key-off { color: var(--text-faint); }
+  .key-warn { color: var(--warn); }
+  .usage-line { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
+  .top-matches { margin-top: 10px; }
+  .top-matches > summary {
+    cursor: pointer; list-style: none; font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint);
+    padding: 5px 0; user-select: none;
+  }
+  .top-matches > summary:hover { color: var(--accent); }
+  .top-matches > summary::-webkit-details-marker { display: none; }
+  .top-matches > summary::before { content: "▸ "; }
+  .top-matches[open] > summary::before { content: "▾ "; }
+  .match-row {
+    display: flex; align-items: baseline; gap: 8px; padding: 5px 8px;
+    border-radius: var(--radius-sm); font-size: 12px; color: var(--text-dim);
+    border: 1px solid transparent;
+  }
+  .match-row:nth-child(odd) { background: var(--panel-2); }
+  .match-row.is-target { border-color: var(--success); color: var(--text); }
+  .match-row .n { color: var(--text-faint); font-weight: 700; min-width: 20px; }
+  .match-row .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .match-row .p { color: var(--accent); font-weight: 600; }
+
+  .row.sim .bubble {
+    background: transparent;
+    border: 1px dashed var(--accent);
+    color: var(--text);
+  }
+  .sim-tag {
+    font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--accent); font-weight: 700; margin-bottom: 4px; text-align: right;
+  }
+  .verdict {
+    margin: 14px auto; padding: 12px 16px; max-width: 560px;
+    border-radius: var(--radius-md); border: 1px solid var(--border);
+    background: var(--panel-2); font-size: 12.5px; line-height: 1.8;
+    color: var(--text-dim);
+  }
+  .verdict b { color: var(--text); }
+  .verdict.win { border-color: var(--success); }
+  .constraint-list { margin: 5px 0 0; padding-left: 15px; }
+  .constraint-list li { margin-bottom: 3px; }
+  .term {
+    display: inline-block; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 20px; padding: 2px 9px; font-size: 10.5px; margin: 4px 4px 0 0;
+    color: var(--text-dim);
+  }
+  .term i { color: var(--accent); font-weight: 600; font-style: normal; }
+  .rec-card.is-target {
+    border-color: var(--success);
+    box-shadow: 0 0 0 1px var(--success) inset;
+  }
+  .target-badge { color: var(--success); font-weight: 700; font-size: 10px; }
+
   #chatLog::-webkit-scrollbar, #sidebar::-webkit-scrollbar { width: 8px; }
   #chatLog::-webkit-scrollbar-thumb, #sidebar::-webkit-scrollbar-thumb {
     background: var(--border);
@@ -382,8 +475,47 @@
       <h1>Shopping Agent</h1>
     </div>
 
+    <div class="side-section">
+      <div class="side-label">Anthropic API key <span class="hint" id="keyStatus">checking…</span></div>
+      <input id="keyInput" type="password" placeholder="sk-ant-…" autocomplete="off"
+             spellcheck="false" aria-label="Anthropic API key" />
+      <div class="btn-row">
+        <button id="keySaveBtn" class="mini-btn" type="button">use key</button>
+        <button id="keyTestBtn" class="mini-btn" type="button">test</button>
+        <button id="keyClearBtn" class="mini-btn" type="button">clear</button>
+      </div>
+      <div class="usage-line" id="keyDetail"></div>
+      <div class="usage-line" id="usageBox"></div>
+    </div>
+
+    <div class="side-section">
+      <label class="side-label" for="agentSelect">Agent</label>
+      <select id="agentSelect"></select>
+    </div>
+
+    <div class="side-section">
+      <label class="side-label" for="sampleSelect">Sample</label>
+      <select id="sampleSelect"><option value="">Free chat — no target</option></select>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Intent card <span class="hint">hidden from agent</span></div>
+      <div id="intentBox" class="profile-box">Pick a sample to see it.</div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Target <button id="revealBtn" class="mini-btn" type="button">reveal</button></div>
+      <div id="targetBox" class="profile-box spoiler">Pick a sample to see it.</div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Agent keywords <span class="hint">live</span></div>
+      <div id="keywordBox" class="profile-box">Nothing extracted yet.</div>
+    </div>
+
     <div class="sidebar-bottom">
       <button id="newSessionBtn">Start new session</button>
+      <button id="autoplayBtn" disabled title="Pick a sample first">▶ Run simulated conversation</button>
 
       <div id="profileBox" class="profile-box">No active session.</div>
 
@@ -418,14 +550,29 @@ const chatLog = document.getElementById('chatLog');
 const msgInput = document.getElementById('msgInput');
 const sendBtn = document.getElementById('sendBtn');
 const newSessionBtn = document.getElementById('newSessionBtn');
+const autoplayBtn = document.getElementById('autoplayBtn');
 const profileBox = document.getElementById('profileBox');
 const turnLabel = document.getElementById('turnLabel');
 const turnBarFill = document.getElementById('turnBarFill');
 const sessionIdLabel = document.getElementById('sessionIdLabel');
 const statusLabel = document.getElementById('statusLabel');
+const agentSelect = document.getElementById('agentSelect');
+const sampleSelect = document.getElementById('sampleSelect');
+const intentBox = document.getElementById('intentBox');
+const targetBox = document.getElementById('targetBox');
+const keywordBox = document.getElementById('keywordBox');
+const revealBtn = document.getElementById('revealBtn');
+const keyInput = document.getElementById('keyInput');
+const keyStatus = document.getElementById('keyStatus');
+const keySaveBtn = document.getElementById('keySaveBtn');
+const keyClearBtn = document.getElementById('keyClearBtn');
+const keyTestBtn = document.getElementById('keyTestBtn');
+const keyDetail = document.getElementById('keyDetail');
+const usageBox = document.getElementById('usageBox');
 
 let sessionId = null;
 let ended = false;
+let targetAsin = null;
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -434,14 +581,29 @@ function el(tag, cls, text) {
   return e;
 }
 
+function esc(v) {
+  return String(v === null || v === undefined ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function list(items) {
+  if (!items || !items.length) return '<i style="color:var(--text-faint)">none yet</i>';
+  return '<ul class="constraint-list">' + items.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+}
+
 function scrollToBottom() { chatLog.scrollTop = chatLog.scrollHeight; }
 
-function addUserMessage(text) {
-  const row = el('div', 'row user');
-  row.appendChild(el('div', 'bubble', text));
+function addUserMessage(text, simulated) {
+  const row = el('div', 'row user' + (simulated ? ' sim' : ''));
+  const wrap = el('div');
+  if (simulated) wrap.appendChild(el('div', 'sim-tag', 'simulated customer'));
+  wrap.appendChild(el('div', 'bubble', text));
+  row.appendChild(wrap);
   chatLog.appendChild(row);
   scrollToBottom();
 }
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function addSystemNote(text) {
   chatLog.appendChild(el('div', 'system-note', text));
@@ -483,8 +645,10 @@ function addAgentTurn(data) {
   if (data.recommendations && data.recommendations.length) {
     const grid = el('div', 'recs');
     data.recommendations.forEach((rec, i) => {
-      const card = el('div', 'rec-card');
-      card.appendChild(el('div', 'rank', '#' + (i + 1)));
+      const card = el('div', 'rec-card' + (rec.is_target ? ' is-target' : ''));
+      const rank = el('div', 'rank', '#' + (i + 1));
+      if (rec.is_target) rank.appendChild(el('span', 'target-badge', '  ★ TARGET'));
+      card.appendChild(rank);
       card.appendChild(el('div', 'title', rec.title || '(untitled)'));
       const meta = el('div', 'meta');
       const price = fmtPrice(rec.price);
@@ -494,6 +658,25 @@ function addAgentTurn(data) {
       grid.appendChild(card);
     });
     block.appendChild(grid);
+  }
+
+  if (data.top_matches && data.top_matches.length) {
+    const det = el('details', 'top-matches');
+    const shown = (data.recommendations || []).length;
+    const sum = el('summary');
+    sum.textContent = 'Top ' + data.top_matches.length +
+      ' matching the customer so far' +
+      (shown && shown < data.top_matches.length ? '  (agent showed ' + shown + ')' : '');
+    det.appendChild(sum);
+    data.top_matches.forEach((m, i) => {
+      const r = el('div', 'match-row' + (m.is_target ? ' is-target' : ''));
+      r.appendChild(el('span', 'n', (i + 1) + '.'));
+      r.appendChild(el('span', 't', (m.is_target ? '★ ' : '') + (m.title || '(untitled)')));
+      const pr = fmtPrice(m.price);
+      if (pr) r.appendChild(el('span', 'p', pr));
+      det.appendChild(r);
+    });
+    block.appendChild(det);
   }
 
   row.appendChild(block);
@@ -511,6 +694,122 @@ function renderProfile(p) {
     (tags ? '<br><br>' + tags : '');
 }
 
+function renderIntent(card) {
+  if (!card) { intentBox.innerHTML = 'Free chat — no hidden intent card.'; return; }
+  intentBox.innerHTML =
+    '<b>Category:</b> ' + esc(card.target_category) +
+    '<br><b>Hard constraints:</b>' + list(card.hard_constraints) +
+    '<b>Soft preferences:</b>' + list(card.soft_preferences);
+}
+
+function renderTarget(t) {
+  targetAsin = t ? t.parent_asin : null;
+  if (!t) { targetBox.innerHTML = 'Free chat — no target product.'; return; }
+  const price = fmtPrice(t.price);
+  targetBox.innerHTML =
+    '<div class="spoiler-inner"><b>' + esc(t.title) + '</b><br>' +
+    esc(t.parent_asin) + (t.store ? ' · ' + esc(t.store) : '') +
+    (price ? ' · ' + esc(price) : '') + '</div>';
+}
+
+function renderKeywords(k) {
+  if (!k) { keywordBox.innerHTML = 'Nothing extracted yet.'; return; }
+  let html = '<b>Category:</b> ' + (k.category ? esc(k.category) : '<i style="color:var(--text-faint)">unresolved</i>');
+  if (k.budget !== null && k.budget !== undefined) html += '<br><b>Budget:</b> $' + esc(k.budget);
+  if (k.scenario) html += '<br><b>Scenario:</b> ' + esc(k.scenario);
+  html += '<br><b>Constraints:</b>' + list(k.constraints);
+  if (k.terms && k.terms.length) {
+    html += '<b>Weighted terms:</b><br>' + k.terms
+      .map(t => '<span class="term">' + esc(t.term) + ' <i>' + esc(t.weight) + '</i></span>').join('');
+  }
+  if (k.asked && k.asked.length) html += '<br><b>Asked:</b> ' + esc(k.asked.join(', '));
+  if (k.query) html += '<br><b>Query:</b> ' + esc(k.query);
+  keywordBox.innerHTML = html;
+}
+
+function renderKeyStatus(st) {
+  if (!st || !st.configured) {
+    keyStatus.className = 'hint key-off';
+    keyStatus.textContent = 'not set';
+    keyDetail.textContent = 'Paste a key to enable the Haiku agent.';
+    return;
+  }
+  const where = st.source === 'browser' ? 'from this page' : 'from ' + st.source;
+  keyStatus.textContent = st.masked + ' · ' + where;
+  // 'verified' is only present after a live check; until then say nothing
+  // about validity, because a well-formed key can still be revoked.
+  if (st.verified === undefined) {
+    keyStatus.className = 'hint';
+    keyDetail.textContent = 'Not tested yet — press "test".';
+  } else if (st.verified) {
+    keyStatus.className = 'hint key-ok';
+    keyDetail.innerHTML = '<span class="key-ok">✓ ' + esc(st.detail) + '</span>';
+  } else {
+    keyStatus.className = 'hint key-warn';
+    keyDetail.innerHTML = '<span class="key-warn">✗ ' + esc(st.detail) + '</span>';
+  }
+}
+
+function renderUsage(u) {
+  if (!u) { usageBox.textContent = ''; return; }
+  usageBox.textContent = 'Haiku: ' + u.calls + ' calls · ' + u.cache_hits +
+    ' cached · ' + u.input_tokens + ' in / ' + u.output_tokens + ' out · $' +
+    Number(u.estimated_cost_usd).toFixed(4);
+}
+
+async function postKey(value, testOnly) {
+  keyStatus.className = 'hint';
+  keyStatus.textContent = testOnly ? 'testing…' : 'saving…';
+  keyDetail.textContent = 'one 1-token call to the API…';
+  try {
+    const res = await fetch('/api/key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testOnly ? { test: true } : { api_key: value }),
+    });
+    const st = await res.json();
+    if (st.error) { keyStatus.className = 'hint key-warn'; keyStatus.textContent = st.error; return; }
+    renderKeyStatus(st);
+    keyInput.value = '';        // never leave the key sitting in the DOM
+    await loadAgents();         // the llm option may have just become available
+  } catch (e) {
+    keyStatus.className = 'hint key-warn';
+    keyStatus.textContent = 'save failed';
+  }
+}
+
+async function loadKeyStatus() {
+  try { renderKeyStatus(await (await fetch('/api/key')).json()); }
+  catch (e) { /* status is cosmetic */ }
+}
+
+async function loadAgents() {
+  try {
+    const data = await (await fetch('/api/agents')).json();
+    agentSelect.innerHTML = '';
+    (data.agents || []).forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.label + (a.available ? '' : ' (unavailable)');
+      opt.title = a.detail || '';
+      agentSelect.appendChild(opt);
+    });
+  } catch (e) { /* pickers are optional; chat still works without them */ }
+}
+
+async function loadSamples() {
+  try {
+    const data = await (await fetch('/api/samples')).json();
+    (data.samples || []).forEach(sm => {
+      const opt = document.createElement('option');
+      opt.value = sm.sample_id;
+      opt.textContent = sm.sample_id + ' · ' + (sm.scenario_type || '?') +
+        (sm.difficulty_bucket ? ' · ' + sm.difficulty_bucket : '');
+      sampleSelect.appendChild(opt);
+    });
+  } catch (e) { /* ditto */ }
+}
+
 async function startSession() {
   chatLog.innerHTML = '';
   ended = false;
@@ -518,7 +817,10 @@ async function startSession() {
   const res = await fetch('/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
+    body: JSON.stringify({
+      sample_id: sampleSelect.value || null,
+      agent: agentSelect.value || 'rules',
+    }),
   });
   const data = await res.json();
   sessionId = data.session_id;
@@ -526,6 +828,11 @@ async function startSession() {
   statusLabel.textContent = 'Ready';
 
   renderProfile(data.profile);
+  renderIntent(data.intent_card);
+  renderTarget(data.target);
+  renderKeywords(null);
+  targetBox.classList.remove('revealed');
+  revealBtn.textContent = 'reveal';
 
   turnLabel.textContent = 'Turn 0/10';
   turnBarFill.style.width = '0%';
@@ -534,7 +841,84 @@ async function startSession() {
   sendBtn.disabled = false;
   msgInput.focus();
 
-  addSystemNote('New session started.');
+  addSystemNote('New session started with ' + (data.agent_label || data.agent) +
+    (data.sample_id ? ' on sample ' + data.sample_id + '.' : ' (free chat, no target).'));
+}
+
+function setBusy(busy) {
+  newSessionBtn.disabled = busy;
+  autoplayBtn.disabled = busy || !sampleSelect.value;
+  sampleSelect.disabled = busy;
+  agentSelect.disabled = busy;
+}
+
+async function runAutoplay() {
+  if (!sampleSelect.value) return;
+  chatLog.innerHTML = '';
+  sessionId = null;                       // autoplay is not a manual session
+  ended = true;
+  msgInput.disabled = true;
+  sendBtn.disabled = true;
+  setBusy(true);
+  statusLabel.textContent = 'Simulating…';
+  sessionIdLabel.textContent = 'autoplay';
+  const chosen = agentSelect.options[agentSelect.selectedIndex];
+  addSystemNote('Running the evaluator’s own simulated customer against ' +
+    (chosen ? chosen.text : (agentSelect.value || 'the agent')) +
+    '. This is exactly what the scorer sees.');
+  addTypingIndicator();
+
+  try {
+    const res = await fetch('/api/autoplay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sample_id: sampleSelect.value, agent: agentSelect.value || 'rules' }),
+    });
+    const data = await res.json();
+    removeTypingIndicator();
+    if (data.error) { addSystemNote('Error: ' + data.error); return; }
+
+    renderProfile(data.profile);
+    renderIntent(data.intent_card);
+    renderTarget(data.target);
+    targetBox.classList.remove('revealed');
+    revealBtn.textContent = 'reveal';
+    renderUsage(data.llm_usage);
+
+    for (const t of data.turns) {
+      addUserMessage(t.user, true);
+      await sleep(250);                   // let it read as a conversation
+      addAgentTurn(t);
+      renderKeywords(t.keywords);
+      if (t.override_pending) {
+        addSystemNote('Intent override still pending — hits are not scored on this turn.');
+      }
+      if (t.scored_hit) addSystemNote('🎯 Scored hit on turn ' + t.turn + '.');
+      turnLabel.textContent = 'Turn ' + t.turn + '/10';
+      turnBarFill.style.width = Math.min(100, (t.turn / 10) * 100) + '%';
+      await sleep(250);
+    }
+
+    const v = el('div', 'verdict' + (data.hit ? ' win' : ''));
+    v.innerHTML =
+      '<b>' + (data.hit ? '✓ Target found' : '✗ Target never surfaced') + '</b><br>' +
+      'Sample <b>' + esc(data.sample_id) + '</b> · ' + esc(data.scenario_type) +
+      (data.difficulty_bucket ? ' · ' + esc(data.difficulty_bucket) : '') + '<br>' +
+      'Agent: <b>' + esc(data.agent_label) + '</b><br>' +
+      (data.hit
+        ? 'Hit on turn <b>' + data.hit_turn + '</b> at rank <b>' + data.hit_rank +
+          '</b> · reciprocal rank <b>' + data.reciprocal_rank + '</b>'
+        : 'Ran all ' + data.turns.length + ' turns · reciprocal rank <b>0</b>');
+    chatLog.appendChild(v);
+    scrollToBottom();
+    statusLabel.textContent = 'Done';
+  } catch (e) {
+    removeTypingIndicator();
+    addSystemNote('Autoplay failed: ' + e);
+    statusLabel.textContent = 'Error';
+  } finally {
+    setBusy(false);
+  }
 }
 
 async function sendMessage() {
@@ -559,6 +943,9 @@ async function sendMessage() {
       addSystemNote('Error: ' + data.error);
     } else {
       addAgentTurn(data);
+      renderKeywords(data.keywords);
+      renderUsage(data.llm_usage);
+      if (data.hit) addSystemNote('🎯 Target surfaced at rank ' + data.hit_rank + '.');
       turnLabel.textContent = 'Turn ' + data.turn + '/' + data.max_turns;
       turnBarFill.style.width = Math.min(100, (data.turn / data.max_turns) * 100) + '%';
       if (data.ended) {
@@ -577,8 +964,33 @@ async function sendMessage() {
   }
 }
 
+keySaveBtn.addEventListener('click', () => {
+  const v = keyInput.value.trim();
+  if (v) postKey(v);
+});
+keyTestBtn.addEventListener('click', () => postKey(null, true));
+keyClearBtn.addEventListener('click', () => postKey(''));
+keyInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); keySaveBtn.click(); }
+});
+
+revealBtn.addEventListener('click', () => {
+  const shown = targetBox.classList.toggle('revealed');
+  revealBtn.textContent = shown ? 'hide' : 'reveal';
+});
+
+autoplayBtn.addEventListener('click', runAutoplay);
+sampleSelect.addEventListener('change', () => {
+  autoplayBtn.disabled = !sampleSelect.value;
+  autoplayBtn.title = sampleSelect.value ? 'Replay this sample end to end' : 'Pick a sample first';
+});
+
 newSessionBtn.addEventListener('click', startSession);
 sendBtn.addEventListener('click', sendMessage);
+loadKeyStatus();
+loadAgents();
+loadSamples();
+
 msgInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.keyCode === 13) {
     e.preventDefault();

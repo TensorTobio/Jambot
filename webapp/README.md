@@ -20,7 +20,7 @@ built on first selection.
 
 | id | Module | What it is | Public-set TechnicalScore |
 |---|---|---|---|
-| `rules` | `starter/agent.py` | Constraint reverse-index + category filter + BM25, deterministic | **0.9532** |
+| `rules` | `starter/agent.py` | Constraint reverse-index + category filter + BM25, deterministic | **0.9738** |
 | `llm` | `api_call_agent/agent.py` | Haiku 4.5 rephrase → retrieve → rerank → reply | 0.964, needs `ANTHROPIC_API_KEY` |
 | `keyword` | `starter/agent_keyword.py` | Generic phrase extraction over FTS5 (earlier variant) | 0.6799 |
 
@@ -61,12 +61,12 @@ never reaches these overrides, so the scored configuration cannot drift.
 
 | Question strategy | Recommend | TechnicalScore |
 |---|---|---|
-| Same attribute (`other`) | hold back | **0.9532** (shipped) |
-| Same attribute (`other`) | show every turn | 0.9030 |
-| Distinguishing (`split`) | hold back | 0.9407 |
-| Distinguishing (`split`) | show every turn | 0.9041 |
-| Rotate | hold back | 0.9075 |
-| Rotate | show every turn | 0.8943 |
+| Same attribute (`other`) | short list | **0.9738** (shipped) |
+| Same attribute (`other`) | show every turn | 0.9050 |
+| Distinguishing (`split`) | short list | 0.9688 |
+| Distinguishing (`split`) | show every turn | 0.9046 |
+| Rotate | short list | 0.9367 |
+| Rotate | show every turn | 0.8990 |
 
 Hit Rate is 1.0 in every combination — the cost is all MRR. The sidebar prints
 the measured score for whatever is selected, so the trade-off is visible on
@@ -74,7 +74,26 @@ camera. Full reasoning and the ablation harness: `CHANGELOG.md` (v3.2) and
 `sweep_policy.py`.
 
 For the demo video: `split` + show-every-turn reads best. For submission:
-`other` + hold-back.
+`other` + short list.
+
+### Robustness to a reworded customer
+
+The scores above all assume the organizer's customer keeps its shipped sentence
+frames. The specification does not promise that, so `paraphrase_eval.py`
+measures what happens when it does not - it rewrites the wording of the
+evaluator's own customer output and leaves the information content untouched:
+
+| customer wording | TechnicalScore |
+|---|---|
+| shipped frames | **0.9738** |
+| lightly reworded | 0.9722 |
+| heavily reworded | 0.9722 |
+| + attribute values re-cased | 0.9048 |
+| + category loosely named | 0.7987 |
+
+Before `starter/dialog.py` grew its free-form fallback, every reworded row
+scored **0.0259**. See the v3.4 CHANGELOG entry.
+
 
 ## Auto-play
 

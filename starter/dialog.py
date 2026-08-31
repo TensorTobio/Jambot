@@ -33,6 +33,29 @@ RE_NO_PREFERENCE = re.compile(
 RE_NO_SIGNAL = re.compile(r"not quite right yet", re.I)
 RE_BUDGET = re.compile(r"budget around \$?\s*([0-9]+(?:\.[0-9]+)?)", re.I)
 
+# --- free-form cues -------------------------------------------------------
+# The frames above are the simulator as it ships. The specification permits the
+# organizer to paraphrase the customer on the private set, which would leave
+# every frame above matching nothing. These cue patterns are the fallback: they
+# look for the *intent* of a turn rather than its exact sentence shape, and are
+# only consulted when no frame matched.
+RE_FREE_NO_PREF = re.compile(
+    r"no preference|don'?t (?:really )?mind|do not mind|your call|up to you"
+    r"|don'?t care|dont care|zero opinion|no strong feelings|no opinion"
+    r"|you (?:choose|pick|decide)|whatever you think|surprise me",
+    re.I,
+)
+RE_FREE_EXHAUSTED = re.compile(
+    r"nothing (?:else|more|further)|can'?t think of anything|cannot think of anything"
+    r"|that'?s all|that is all|tapped out|no more thoughts|nothing left|no other",
+    re.I,
+)
+RE_FREE_OVERRIDE = re.compile(
+    r"actually|forget (?:what|that|it)|scratch that|changed my mind|change of plan"
+    r"|instead|wait no|hold on|never mind|nevermind|on second thought",
+    re.I,
+)
+
 
 def classify_constraint(value: str) -> str:
     """Same classifier the simulator uses to decide which asks a value answers."""
@@ -70,6 +93,10 @@ class SessionState:
             str(tag).lower() for tag in (self.profile.get("preference_tags") or [])
         ]
         self.category: str | None = None
+        # False when the category was guessed by token overlap rather than read
+        # from the message verbatim; the ranker trusts it less. See
+        # ``starter.retrieval.W_CATEGORY_FUZZY``.
+        self.category_confident = True
         self.constraints: list[str] = []          # ordered, de-duplicated
         self._seen: set[str] = set()
         self.messages: list[str] = []
@@ -137,7 +164,14 @@ class SessionState:
         self.messages.append(text)
         if not text:
             return
+        if not self._observe_frames(text, turn):
+            # No known frame matched. Either the organizer paraphrased the
+            # customer, or this is a turn shape we have never seen; fall back to
+            # reading the message for its content rather than its structure.
+            self._observe_freeform(text)
 
+    def _observe_frames(self, text: str, turn: int) -> bool:
+        """The simulator as shipped. Returns True when a frame matched."""
         # 1. Opening turn: always carries the coarse category, sometimes a value.
         if turn == 1 or self.category is None:
             match = RE_OPEN_BUYING.match(text)
@@ -145,12 +179,12 @@ class SessionState:
                 self.scenario = "buying"
                 self._set_category(match.group("cat"))
                 self.add_constraint(match.group("value"))
-                return
+                return True
             match = RE_OPEN_BROWSING.match(text)
             if match:
                 self.scenario = "browsing"
                 self._set_category(match.group("cat"))
-                return
+                return True
             match = RE_OPEN_OVERRIDE.match(text)
             if match and text.startswith("I'm looking for"):
                 # "I'm looking for {cat}. {old soft preference}"
@@ -160,7 +194,7 @@ class SessionState:
                 return
             if text.startswith("I'm looking for"):
                 self._set_category(text[len("I'm looking for"):])
-                return
+                return True
 
         # 2. Mid-session frames.
         match = RE_OVERRIDE.search(text)
@@ -169,13 +203,13 @@ class SessionState:
             self.override_seen = True
             for value in self._split_payload(match.group("value")):
                 self.add_constraint(value)
-            return
+            return True
 
         match = RE_DISCLOSE.search(text)
         if match:
             for value in self._split_payload(match.group("payload")):
                 self.add_constraint(value)
-            return
+            return True
 
         match = RE_NO_PREFERENCE.search(text)
         if match:
@@ -188,10 +222,64 @@ class SessionState:
                     self.exhausted = True
             else:
                 self.scenario = "boundary" if self.scenario == "unknown" else self.scenario
-            return
+            return True
 
         if RE_NO_SIGNAL.search(text):
-            return
+            return True
+        return False
+
+    def _observe_freeform(self, text: str) -> None:
+        """Read a turn by content when its sentence shape is unrecognised.
+
+        Four things are worth recovering, in rising order of value:
+
+        1. the coarse category, if we still do not have one - the opening line
+           names it whatever the wording, and it is the single most valuable
+           field on turn 1 of a Browsing session;
+        2. an override cue, so the scenario is labelled correctly;
+        3. a "no preference" / "nothing more" cue, which tells us the customer
+           is out of information and there is no later turn worth waiting for;
+        4. any catalog constraint quoted in the message.
+
+        Nothing here can raise, and nothing here fires when a frame matched, so
+        the shipped-simulator behaviour is untouched.
+        """
+        scan = text
+        if self.category is None:
+            # Verbatim taxonomy string first; token overlap only if that fails.
+            matched = self.index.match_category(text)
+            if matched is None:
+                matched = self.index.match_category_fuzzy(text)
+                if matched is not None:
+                    self.category_confident = False
+            if matched:
+                self.category = matched
+                self.raw_category = matched
+        # The category name is not a disclosure - "Jewelry Necklaces" must not
+        # donate "Jewelry" as a constraint - so hide it before scanning.
+        if self.category:
+            scan = re.sub(re.escape(self.category), " ", scan, flags=re.I)
+
+        if RE_FREE_OVERRIDE.search(text):
+            self.scenario = "intent_override"
+            self.override_seen = True
+
+        spent = RE_FREE_EXHAUSTED.search(text)
+        no_pref = RE_FREE_NO_PREF.search(text)
+        if spent or no_pref:
+            lowered = text.lower()
+            named = [a for a in ALLOWED_ATTRIBUTES if a in lowered]
+            if spent:
+                # "nothing more on X" - X is drained. "other" drains the card.
+                for attribute in named:
+                    self.unhelpful.add(attribute)
+                if "other" in named or not named:
+                    self.exhausted = True
+            elif self.scenario == "unknown":
+                self.scenario = "boundary"
+
+        for value in self.index.find_constraints(scan):
+            self.add_constraint(value)
 
     def _set_category(self, raw: str) -> None:
         raw = str(raw).strip().strip(".,")
@@ -323,9 +411,14 @@ class SessionState:
                 known = f'I have "{latest}" down. '
 
         if count:
-            lead = f"Here are {count} that fit so far."
+            # The ask-policy shows a single best guess on the early turns, so
+            # "Here are 1 that fit" is the common case, not an edge case.
+            if count == 1:
+                lead = "Here's the closest match I've found so far."
+            else:
+                lead = f"Here are {count} that fit so far."
             if turn > 1 and known:
-                lead = f"{known}Here are {count} that fit so far."
+                lead = f"{known}{lead}"
             return f"{lead} {question}".strip()
         parts = [opener, known.strip(), question]
         return " ".join(part for part in parts if part).strip()

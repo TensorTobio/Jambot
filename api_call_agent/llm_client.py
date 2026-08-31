@@ -23,6 +23,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -38,6 +39,11 @@ PRICE_OUTPUT_PER_MTOK = 5.00
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+if getattr(sys, "frozen", False):
+    # In a PyInstaller bundle this module lives in a read-only temp directory
+    # that is deleted on exit, so anchor .env and the cache next to the .exe.
+    HERE = Path(sys.executable).resolve().parent
+    ROOT = HERE.parent
 CACHE_DIR = HERE / ".cache"
 
 # Checked in order; the first file that defines a variable wins, and a variable
@@ -134,6 +140,46 @@ def require_key() -> str:
     return key
 
 
+def verify_key(key: str | None = None, *, timeout: float = 15.0) -> tuple[bool, str]:
+    """Ask the API whether *key* is actually accepted, with one 1-token call.
+
+    A revoked or expired key is still perfectly well-formed, so a ``sk-ant-``
+    prefix check proves nothing - only the API can settle it. Falls back to the
+    usual environment/.env lookup when *key* is None. The key is never included
+    in the returned message. Returns ``(ok, human-readable reason)``.
+    """
+    key = (str(key) if key else "").strip() or api_key()
+    if not key:
+        return False, "no API key set"
+    request = urllib.request.Request(
+        API_URL,
+        data=json.dumps({
+            "model": DEFAULT_MODEL,
+            "max_tokens": 1,
+            "messages": [{"role": "user", "content": "hi"}],
+        }).encode("utf-8"),
+        headers={
+            "content-type": "application/json",
+            "anthropic-version": API_VERSION,
+            "x-api-key": key,
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout):
+            return True, "accepted by the API"
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            return False, "rejected by the API - invalid, expired or revoked"
+        if exc.code == 429:
+            return True, "valid, but rate-limited right now"
+        if exc.code == 400:
+            return True, "valid (the probe request itself was rejected)"
+        return False, f"API returned HTTP {exc.code}"
+    except Exception:
+        return False, "could not reach api.anthropic.com - network or proxy?"
+
+
 class ClaudeClient:
     """One call = one ``messages`` request. Returns text, or ``None`` on failure."""
 
@@ -146,6 +192,7 @@ class ClaudeClient:
         use_cache: bool = True,
         cache_dir: Path | str = CACHE_DIR,
         verbose: bool = False,
+        api_key: str | None = None,
     ) -> None:
         # ANTHROPIC_MODEL (shell or .env) overrides the default, but an explicit
         # --model argument still wins.
@@ -158,6 +205,10 @@ class ClaudeClient:
         self.use_cache = use_cache
         self.cache_dir = Path(cache_dir)
         self.verbose = verbose
+        # Per-client override, ahead of the environment/.env lookup. Only ever
+        # set in memory (see set_api_key); it is never written to disk and never
+        # enters the cache key, which hashes the request payload alone.
+        self._api_key = (api_key or "").strip() or None
 
         self.calls = 0
         self.cache_hits = 0
@@ -168,6 +219,16 @@ class ClaudeClient:
 
         if self.use_cache:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def set_api_key(self, key: str | None) -> None:
+        """Use *key* for this client only, ahead of the environment and .env.
+
+        webapp/ calls this with a key typed into the browser, so a demo key
+        never has to be exported into ``os.environ`` (where anything else in the
+        process could read it) or written to a file. ``None`` restores the
+        normal lookup.
+        """
+        self._api_key = (str(key) if key else "").strip() or None
 
     # -- cost ------------------------------------------------------------
     @property
@@ -239,7 +300,7 @@ class ClaudeClient:
             except (OSError, ValueError, json.JSONDecodeError):
                 pass  # corrupt cache entry - fall through and re-request
 
-        key = api_key()
+        key = self._api_key or api_key()
         if not key:
             if not self._warned:
                 print(

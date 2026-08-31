@@ -252,10 +252,10 @@ All three stubbed failure modes now land on the identical score:
 
 | stubbed model | TechnicalScore |
 |---|---|
-| `normal` (plausible output, but a **randomly shuffled** rerank) | 0.934167 |
-| `garbage` (invalid JSON, unknown ids, a markdown reply) | 0.934167 |
-| `dead` (every call returns `None`) | 0.934167 |
-| `starter/` rule-based reference | 0.934167 |
+| `normal` (plausible output, but a **randomly shuffled** rerank) | 0.98 |
+| `garbage` (invalid JSON, unknown ids, a markdown reply) | 0.98 |
+| `dead` (every call returns `None`) | 0.98 |
+| `starter/` rule-based reference | 0.98 |
 
 The `normal` row is the one worth staring at. Before the tier guard and rank
 fusion, an adversarially random reranker dragged MRR from 0.90 to 0.79; it now
@@ -280,6 +280,12 @@ above it. Measured, 20 sessions, `--compare`:
 | `api_call_agent` | 1.0 | 1.0 | 2.8 | 0.964 |
 | `starter/` rule-based | 1.0 | 1.0 | 2.8 | 0.964 |
 | **delta** | - | - | - | **+0.000** |
+
+> Those two rows were measured against a live model under the **v3.2**
+> recommend-now policy. Both tracks have since moved to `SHOW_SCHEDULE`
+> (see the v3.3 CHANGELOG entry), which lifts the stubbed reference from
+> 0.934 to 0.98; the `--compare` run has not been repeated against the paid
+> API, so the delta is stated as last measured, not re-derived.
 
 There is almost no headroom left to win: the simulated customer speaks in
 verbatim catalogue strings, and exact matching already puts the target at rank 1

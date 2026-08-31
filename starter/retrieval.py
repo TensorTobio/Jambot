@@ -83,6 +83,35 @@ def clean_constraint(value: str, limit: int = CONSTRAINT_LIMIT) -> str:
     return re.sub(r"\s+", " ", value).strip(" -;,.\t\n")[:limit].rstrip()
 
 
+WORD_RE = re.compile(r"[A-Za-z0-9]+")
+NON_ALNUM_RE = re.compile(r"[^a-z0-9]+")
+
+
+# A lone word is only a disclosure if it carries content. These never are:
+# the ten attribute names are what *we* asked about (the customer echoes them
+# back in "no preference for colour"), and the rest are ordinary conversational
+# filler that happens to exist as a freak one-off constraint string somewhere in
+# 50,000 products - "down" and "other" are each used by fewer than three.
+BARE_WORD_STOP = frozenset({
+    "category", "material", "color", "colour", "size", "style", "brand",
+    "budget", "feature", "use", "case", "other",
+    "down", "thing", "things", "sort", "kind", "yeah", "sure", "sorry",
+    "please", "really", "maybe", "guess", "narrow", "help", "look", "looks",
+    "want", "need", "like", "just", "know", "think", "much", "more", "most",
+    "good", "great", "nice", "best", "back", "over", "under", "around",
+})
+
+
+def normalise_constraint(value: str) -> str:
+    """Case- and punctuation-insensitive key for a constraint string.
+
+    ``Material:alloy``, ``material: alloy`` and ``MATERIAL - ALLOY`` all collapse
+    to ``material alloy``. This is what lets a disclosure still be recognised
+    when the customer's phrasing has been rewritten around it.
+    """
+    return NON_ALNUM_RE.sub(" ", str(value).lower()).strip()
+
+
 def constraint_profile(product: dict) -> list[str]:
     """The ordered constraint vocabulary the simulator can disclose for a product.
 
@@ -155,11 +184,26 @@ def _price_of(product: dict) -> float | None:
 W_CONSTRAINT = 1000.0     # per exact disclosed-constraint match
 W_POSITION = 150.0        # disclosure order agrees with the product's own order
 W_CATEGORY = 400.0        # product sits in the category named in the opening line
+# A category recovered by token overlap rather than by name is a guess, and a
+# measured-bad one: over the 200 public targets, degrading the category to a
+# single word and re-resolving it lands on the right bucket 76 times and the
+# wrong one 80 times. It is still worth having - a right guess pays more than a
+# wrong one costs, because the constraint route corrects the wrong ones a turn
+# later - but it must not carry the weight of a verified match.
+W_CATEGORY_FUZZY = 120.0  # same signal, sourced from a guess
 W_PRICE = 120.0           # price agrees with a disclosed budget
 W_FUZZY = 60.0            # partial (token-level) match on an unmatched constraint
 W_KEYWORD = 25.0          # BM25 keyword-route agreement
-W_PROFILE = 8.0           # long-term profile preference tags
-W_POPULARITY = 3.0        # mild prior: well-reviewed, frequently-rated products
+W_PROFILE = 2.0           # long-term profile preference tags
+# Purchase prior. The hidden targets are real purchase records, so how often a
+# product has been bought is the strongest signal left once the structured
+# routes tie - and at turn 1 of a Browsing session it is the *only* signal.
+# Two shapes, because they disagree usefully: the rating-weighted one prefers a
+# well-liked product, the count-only one prefers a frequently-bought one.
+# Tuned by coordinate ascent on a 100/100 split of the public set; the optimum
+# is a broad plateau (see CHANGELOG), not a knife edge.
+W_POPULARITY = 10.0       # average_rating x log10(1 + rating_number)
+W_POPULARITY_N = 20.0     # log10(1 + rating_number) alone
 
 # How many top-scoring candidates the ask-policy reasons about when choosing a
 # question. Large enough to be representative, small enough to stay cheap.
@@ -177,13 +221,19 @@ class CatalogIndex:
         self.category: dict[str, str] = {}
         self.price: dict[str, float | None] = {}
         self.prior: dict[str, float] = {}
+        self.prior_n: dict[str, float] = {}
         self.profile_text: dict[str, str] = {}
         self.constraints: dict[str, list[str]] = {}
         self.constraint_set: dict[str, frozenset[str]] = {}
 
         self.by_category: dict[str, list[str]] = defaultdict(list)
         self.by_constraint: dict[str, list[str]] = defaultdict(list)
+        # normalised constraint -> the raw spellings that collapse onto it,
+        # most-supported first. Powers frame-independent extraction.
+        self.by_norm: dict[str, list[str]] = {}
         self.category_names: list[str] = []
+        self.category_tokens: dict[str, frozenset[str]] = {}
+        self.by_category_token: dict[str, list[str]] = defaultdict(list)
         self._type_cache: dict[str, str] = {}
 
         self.connection = sqlite3.connect(":memory:", check_same_thread=False)
@@ -220,8 +270,11 @@ class CatalogIndex:
                 rating = product.get("average_rating") or 0.0
                 count = product.get("rating_number") or 0
                 try:
-                    self.prior[asin] = float(rating) * math.log10(1.0 + float(count))
+                    popularity = math.log10(1.0 + float(count))
+                    self.prior_n[asin] = popularity
+                    self.prior[asin] = float(rating) * popularity
                 except (TypeError, ValueError):
+                    self.prior_n[asin] = 0.0
                     self.prior[asin] = 0.0
                 self.profile_text[asin] = (
                     f"{self.title[asin]} {_text(product.get('features'))} "
@@ -245,6 +298,17 @@ class CatalogIndex:
         self.connection.commit()
         # Longest first so that "Tees & Blouses T-Shirts" wins over "T-Shirts".
         self.category_names = sorted(self.by_category, key=len, reverse=True)
+        for name in self.by_category:
+            tokens = frozenset(terms(name))
+            self.category_tokens[name] = tokens
+            for token in tokens:
+                self.by_category_token[token].append(name)
+        for value in self.by_constraint:
+            key = normalise_constraint(value)
+            if key:
+                self.by_norm.setdefault(key, []).append(value)
+        for forms in self.by_norm.values():
+            forms.sort(key=lambda v: -len(self.by_constraint[v]))
 
     # -- lookups ----------------------------------------------------------
     def match_category(self, text: str) -> str | None:
@@ -255,6 +319,104 @@ class CatalogIndex:
             if name.lower() in lowered:
                 best = name
                 break
+        return best
+
+    def find_constraints(self, text: str, limit: int = 4, max_span: int = 40) -> list[str]:
+        """Every catalog constraint quoted anywhere in ``text``, longest first.
+
+        The frame regexes in ``starter.dialog`` read a disclosure out of the
+        *sentence shape* the simulator happens to use. The specification allows
+        the organizer to paraphrase that shape on the private set, which would
+        leave the regexes matching nothing at all. This is the shape-independent
+        route: the values a customer discloses are verbatim strings from the
+        hidden product, so we can look for them directly instead.
+
+        Word spans of the message are normalised and looked up in ``by_norm``,
+        which also survives a rewriter that lowercases or re-punctuates the
+        value. Overlapping matches are resolved longest-first so that a full
+        feature line wins over a single word inside it.
+        """
+        spans = [(m.group(0).lower(), m.start(), m.end())
+                 for m in WORD_RE.finditer(str(text))][:150]
+        if not spans:
+            return []
+        hits: list[tuple[int, int, int, str]] = []
+        for i in range(len(spans)):
+            key = ""
+            for j in range(i, min(len(spans), i + max_span)):
+                key = f"{key} {spans[j][0]}" if key else spans[j][0]
+                if len(key) < 3:
+                    continue
+                forms = self.by_norm.get(key)
+                if not forms:
+                    continue
+                raw = str(text)[spans[i][1]:spans[j][2]]
+                if j == i and key not in MATERIALS:
+                    # A lone word is a disclosure only if it carries content.
+                    # Without this, "narrow it down" donates "down" and the
+                    # attribute we just asked about comes straight back as
+                    # "other". Materials skip the test - ``constraint_profile``
+                    # inserts those on their own, so they are always real.
+                    if len(key) < 4 or key in STOPWORDS or key in BARE_WORD_STOP:
+                        continue
+                    # ...and only if it is unambiguous: either the customer
+                    # spelled a catalog constraint exactly, or exactly one
+                    # catalog spelling normalises onto it - which is what lets a
+                    # re-cased "imported" still resolve to "Imported".
+                    if raw not in self.by_constraint and len(forms) > 1:
+                        continue
+                # Prefer the customer's own spelling when the catalog has it,
+                # so exact-match scoring still fires; otherwise the commonest.
+                canonical = raw if raw in self.by_constraint else forms[0]
+                hits.append((j - i + 1, i, j, canonical))
+        if not hits:
+            return []
+        hits.sort(key=lambda item: (-item[0], item[1]))
+        taken: set[int] = set()
+        chosen: list[tuple[int, str]] = []
+        for _, start, end, canonical in hits:
+            if any(pos in taken for pos in range(start, end + 1)):
+                continue
+            taken.update(range(start, end + 1))
+            chosen.append((start, canonical))
+            if len(chosen) >= limit:
+                break
+        chosen.sort()
+        return [canonical for _, canonical in chosen]
+
+    def match_category_fuzzy(self, text: str, min_ratio: float = 0.5) -> str | None:
+        """Best category by token overlap, when no name appears verbatim.
+
+        ``match_category`` needs the catalog's own taxonomy string to be present
+        in the message. A rewritten customer says "belts", not "Accessories
+        Belts" - and the category is the single most valuable field on turn 1,
+        so losing it costs more than losing a constraint. This recovers it from
+        partial overlap instead.
+
+        Scored by the fraction of the *category's* tokens the message covers, so
+        a one-word message cannot claim a four-word category. Ties go to the
+        bigger bucket, which is the better prior on a real purchase record.
+        """
+        tokens = set(terms(text))
+        if not tokens:
+            return None
+        overlaps: dict[str, int] = {}
+        for token in tokens:
+            for name in self.by_category_token.get(token, ()):
+                overlaps[name] = overlaps.get(name, 0) + 1
+        best: str | None = None
+        best_key: tuple[float, int, int] | None = None
+        for name, overlap in overlaps.items():
+            size = len(self.category_tokens[name])
+            if not size:
+                continue
+            ratio = overlap / size
+            if ratio < min_ratio:
+                continue
+            key = (ratio, overlap, len(self.by_category[name]))
+            if best_key is None or key > best_key:
+                best_key = key
+                best = name
         return best
 
     def is_known_constraint(self, value: str) -> bool:
@@ -360,6 +522,9 @@ class CatalogIndex:
         fuzzy_terms = [set(terms(c)) for c in unknown if terms(c)]
         profile_tags = [t for t in state.profile_tags if t]
         budget = state.budget
+        category_weight = (
+            W_CATEGORY if getattr(state, "category_confident", True) else W_CATEGORY_FUZZY
+        )
 
         scored: list[tuple[float, float, str]] = []
         best_hits = 0
@@ -383,7 +548,7 @@ class CatalogIndex:
                 score += W_POSITION * position_hits
 
             if state.category and self.category[asin] == state.category:
-                score += W_CATEGORY
+                score += category_weight
 
             if budget is not None:
                 price = self.price[asin]
@@ -408,6 +573,7 @@ class CatalogIndex:
                 score += W_PROFILE * sum(1 for tag in profile_tags if tag in text)
 
             score += W_POPULARITY * self.prior[asin]
+            score += W_POPULARITY_N * self.prior_n[asin]
             scored.append((-score, -self.prior[asin], asin))
 
         scored.sort()

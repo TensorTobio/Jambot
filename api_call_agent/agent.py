@@ -50,11 +50,10 @@ from .rerank import MODEL_WEIGHT, rerank, should_rerank  # noqa: E402
 from .reply import compose_reply  # noqa: E402
 
 # Same recommend-now policy as the deterministic track: the session ends at the
-# first hit and freezes MRR at that rank, so a scattershot early list is worse
-# than one more turn of information gathering.
-FORCE_RECOMMEND_TURN = 4
-CONFIDENT_TIE = 3
-MIN_CONFIDENT_HITS = 1
+# first hit and freezes MRR at that rank, so answering with a short, sharp list
+# beats answering with a wide one. ``SHOW_SCHEDULE`` is imported rather than
+# re-declared so the two tracks cannot drift apart.
+from starter.agent import SHOW_SCHEDULE  # noqa: E402
 
 # How many candidates the model is asked to judge. More context costs tokens and
 # latency; 30 keeps a rerank call around 2k input tokens.
@@ -244,20 +243,20 @@ class Agent:
             pool_size = max(self.candidate_pool, limit)
             candidates, meta = self.index.rank_with_meta(state, top_k=pool_size)
 
-            confident = (
-                meta["best_hits"] >= MIN_CONFIDENT_HITS
-                and meta["tied_at_best"] <= CONFIDENT_TIE
-            )
-            withhold = (
-                not getattr(state, "always_recommend", False)
-                and turn < FORCE_RECOMMEND_TURN
-                and not confident
-                and not state.exhausted
-            )
+            # How many products this turn is allowed to show. Early turns bet
+            # on a single best guess: a miss only costs the turn, while a hit
+            # banks rank 1. See ``starter.agent.SHOW_SCHEDULE``.
+            if getattr(state, "always_recommend", False):
+                shown = limit
+            elif state.exhausted:
+                shown = limit
+            else:
+                shown = SHOW_SCHEDULE[min(max(int(turn), 1), len(SHOW_SCHEDULE)) - 1]
+            shown = max(min(shown, limit), 1)
 
-            if withhold:
-                final: list[str] = []
-            elif self.use_rerank and should_rerank(self.index, candidates, state, limit):
+            # The window the model is asked about is the window we will show -
+            # judging ten positions when only the first is visible is pure spend.
+            if self.use_rerank and should_rerank(self.index, candidates, state, shown):
                 # -- stage 3: the model orders what the evidence tied ---
                 final = rerank(
                     self.client, self.index, candidates, state,
@@ -266,11 +265,12 @@ class Agent:
                 self.stats["rerank_called"] += 1
             else:
                 # Either stage 3 is off, or the evidence already fixes both the
-                # membership and the order of the top-k - the call could not
-                # change the answer, so it is not made.
+                # membership and the order of the shown window - the call could
+                # not change the answer, so it is not made.
                 final = candidates[:limit]
-                if self.use_rerank and not withhold:
+                if self.use_rerank:
                     self.stats["rerank_skipped_determined"] += 1
+            final = final[:shown]
 
             attribute = state.next_ask(
                 meta.get("pool_top"), policy=getattr(state, "ask_policy", "other")

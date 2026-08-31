@@ -21,6 +21,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import sys
 import threading
@@ -28,7 +29,22 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+def _roots() -> tuple[Path, Path]:
+    """(asset root, data root), for both source runs and PyInstaller bundles.
+
+    A frozen build unpacks to ``sys._MEIPASS``; a ``data/`` directory sitting
+    next to the .exe wins over the bundled copy, so the catalog can be swapped
+    out without rebuilding.
+    """
+    if getattr(sys, "frozen", False):
+        bundle = Path(sys._MEIPASS)
+        beside = Path(sys.executable).resolve().parent
+        return bundle, (beside if (beside / "data").is_dir() else bundle)
+    root = Path(__file__).resolve().parent.parent
+    return root, root
+
+
+ROOT, DATA_ROOT = _roots()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -109,6 +125,85 @@ def _reset_options(options: dict) -> dict:
     }
 
 
+def _agent_keywords(agent: object, session_id: str) -> dict | None:
+    """What the agent has actually pulled out of the conversation so far.
+
+    Read defensively, because the two session shapes differ: ``rules``/``llm``
+    keep a ``starter.dialog.SessionState`` (an ordered constraint list plus a
+    resolved category), while ``keyword`` keeps its own ``_SessionState`` of
+    weighted FTS terms. Anything unrecognised yields ``None`` rather than
+    raising - this is display-only and must never break a turn.
+    """
+    state = getattr(agent, "_sessions", {}).get(session_id)
+    if state is None:
+        return None
+    out: dict = {
+        "category": getattr(state, "category", None) or getattr(state, "category_family", None),
+        "budget": getattr(state, "budget", None),
+        "asked": list(getattr(state, "asked", None) or sorted(getattr(state, "asked_attributes", None) or [])),
+        "scenario": getattr(state, "scenario", None) or getattr(state, "intent", None),
+    }
+    constraints = getattr(state, "constraints", None)
+    if constraints is not None:
+        out["constraints"] = list(constraints)
+        query_text = getattr(state, "query_text", None)
+        out["query"] = query_text() if callable(query_text) else None
+        out["terms"] = []
+    else:
+        weights = getattr(state, "term_weights", None) or {}
+        ranked = sorted(weights.items(), key=lambda kv: (-kv[1], kv[0]))[:20]
+        out["constraints"] = [str(x) for x in (getattr(state, "phrases", None) or [])]
+        out["terms"] = [{"term": str(t), "weight": round(float(w), 3)} for t, w in ranked]
+        out["query"] = " ".join(t["term"] for t in out["terms"][:8]) or None
+    return out
+
+
+def _top_matches(agent: object, session_id: str, fallback: list[str], limit: int = TOP_K) -> list[str]:
+    """The full ranked shortlist for everything the customer has disclosed.
+
+    The rule and LLM agents deliberately show fewer products on early turns
+    (``starter.agent.SHOW_SCHEDULE`` is ``(1, 1, 1, 10)``), so the chat reply is
+    not the whole picture. This re-ranks from the same session state - the call
+    is read-only, and happens after the agent has already produced its scored
+    answer, so nothing about the scored behaviour changes. The keyword agent has
+    no such schedule and no ``index``, so it falls back to its own list, which
+    is already the full ten.
+    """
+    state = getattr(agent, "_sessions", {}).get(session_id)
+    index = getattr(agent, "index", None)
+    if state is None or not hasattr(index, "rank_with_meta"):
+        return list(fallback)[:limit]
+    try:
+        ranked, _ = index.rank_with_meta(state, top_k=limit)
+        return [str(asin) for asin in ranked][:limit]
+    except Exception:
+        return list(fallback)[:limit]
+
+
+def _mask_key(key: str | None) -> str | None:
+    """Enough to recognise a key, never enough to use one."""
+    if not key:
+        return None
+    return f"{key[:7]}…{key[-4:]}" if len(key) > 14 else "…"
+
+
+def _reset_agent(agent: object, session_id: str, profile: dict, options: dict | None) -> None:
+    """Reset a session, passing only the demo overrides this agent accepts.
+
+    ``starter.agent_keyword.Agent.reset`` takes the evaluator's two positional
+    arguments and nothing else, so its overrides are dropped rather than raising
+    ``TypeError`` and making that agent unselectable in the UI.
+    """
+    kwargs = _reset_options(options or {})
+    try:
+        params = inspect.signature(agent.reset).parameters
+    except (TypeError, ValueError):
+        params = {}
+    if not any(param.kind is inspect.Parameter.VAR_KEYWORD for param in params.values()):
+        kwargs = {key: value for key, value in kwargs.items() if key in params}
+    agent.reset(session_id, profile, **kwargs)
+
+
 def load_samples(dataset_path: Path) -> list[dict]:
     # public_set.jsonl ships ground_truth.parent_asin openly - only the
     # organizer's private 800 sessions are actually hidden - so this is not a
@@ -139,22 +234,68 @@ class AppState:
         self.samples = load_samples(dataset_path)
         self.samples_by_id = {s["sample_id"]: s for s in self.samples}
 
+        # Browser-supplied key, held in memory for this process only: never
+        # written to disk, never logged, never sent back to the client except
+        # masked. See set_api_key().
+        self.api_key: str | None = None
         self._agents: dict[str, object] = {}
         self._index = None            # shared CatalogIndex for rules + llm
         self._lock = threading.Lock()
         self.sessions: dict[str, dict] = {}
         print(f"Ready. {len(self.catalog_ids)} products.", flush=True)
 
+    # -- api key ----------------------------------------------------------
+    def key_status(self) -> dict:
+        """Where the effective key comes from, with the key itself masked."""
+        from api_call_agent.llm_client import api_key, dotenv_source
+
+        effective = self.api_key or api_key()
+        if self.api_key:
+            source = "browser"
+        elif effective:
+            source = dotenv_source() or "environment"
+        else:
+            source = None
+        return {
+            "configured": bool(effective),
+            "source": source,
+            "masked": _mask_key(effective),
+            "looks_valid": bool(effective and effective.startswith("sk-ant-")),
+        }
+
+    def set_api_key(self, key: str | None) -> dict:
+        """Point the Haiku client at a key typed into the browser.
+
+        Scoped to the llm agent's ``ClaudeClient`` rather than ``os.environ`` so
+        it cannot leak into anything else running in this process. An empty
+        value clears it and falls back to .env / the environment.
+        """
+        with self._lock:
+            self.api_key = (str(key) if key else "").strip() or None
+            agent = self._agents.get("llm")
+        if agent is not None:
+            agent.client.set_api_key(self.api_key)
+        return self.key_status()
+
+    def check_key(self) -> dict:
+        """Key status plus the API's own verdict on it."""
+        from api_call_agent.llm_client import verify_key
+
+        status = self.key_status()
+        if not status["configured"]:
+            return {**status, "verified": False, "detail": "no key set"}
+        ok, detail = verify_key(self.api_key)
+        return {**status, "verified": ok, "detail": detail}
+
     # -- agents -----------------------------------------------------------
     def available_agents(self) -> list[dict]:
-        from api_call_agent.llm_client import api_key
-
+        status = self.key_status()
         out = []
         for key, info in AGENT_INFO.items():
             entry = {"id": key, **info, "available": True, "loaded": key in self._agents}
-            if key == "llm" and not api_key():
+            if key == "llm" and not status["configured"]:
                 entry["available"] = False
-                entry["detail"] += "  (ANTHROPIC_API_KEY is not set - it would fall back to the rule-based path.)"
+                entry["detail"] += "  (No API key yet - paste one in the sidebar, or it falls back to the rule-based path.)"
             out.append(entry)
         return out
 
@@ -177,6 +318,8 @@ class AppState:
 
                     self._index = CatalogIndex(self.catalog_path)
                 agent = ApiAgent(str(self.catalog_path), index=self._index)
+                if self.api_key:
+                    agent.client.set_api_key(self.api_key)
             else:
                 from starter.agent_keyword import Agent as KeywordAgent
 
@@ -223,14 +366,24 @@ class AppState:
             sample_id = None
         agent_name = agent_name if agent_name in AGENT_INFO else "rules"
         options = options or {}
-        self.agent(agent_name).reset(session_id, profile, **_reset_options(options))
+        _reset_agent(self.agent(agent_name), session_id, profile, options)
         self.sessions[session_id] = {
             "turn": 0, "target_asin": target_asin, "hit": False, "agent": agent_name,
         }
         target = None
+        intent = None
         if target_asin:
             info = self.display.get(target_asin, {})
-            target = {"parent_asin": target_asin, "title": info.get("title", "")}
+            target = {
+                "parent_asin": target_asin,
+                "title": info.get("title", ""),
+                "price": info.get("price"),
+                "store": info.get("store", ""),
+            }
+            # The card the simulator would have spoken from. The agent never
+            # sees it - it is here so a human tester can compare what the agent
+            # extracted against what the customer was actually holding.
+            intent, _ = materialize_hidden_fields(self.samples_by_id[sample_id]["_raw"], self.products)
         return {
             "session_id": session_id,
             "profile": profile,
@@ -238,6 +391,7 @@ class AppState:
             "agent": agent_name,
             "agent_label": AGENT_INFO[agent_name]["label"],
             "target": target,
+            "intent_card": intent,
         }
 
     def send_message(self, session_id: str, message: str) -> dict:
@@ -267,6 +421,8 @@ class AppState:
             "withheld": not ranked,
             "usage": response.get("usage"),
             "llm_usage": self.usage() if session["agent"] == "llm" else None,
+            "keywords": _agent_keywords(agent, session_id),
+            "top_matches": self.decorate(_top_matches(agent, session_id, ranked), target_asin),
             "ended": turn >= MAX_TURNS,
             "hit": hit_rank is not None and not already_hit,
             "hit_rank": hit_rank if not already_hit else None,
@@ -292,7 +448,7 @@ class AppState:
         effective = {**sample, "intent_card": card, "behavior": behavior}
 
         session_id = f"autoplay_{uuid.uuid4().hex[:8]}"
-        agent.reset(session_id, sample["user_profile"], **_reset_options(options or {}))
+        _reset_agent(agent, session_id, sample["user_profile"], options)
         disclosed: set[str] = set()
         boundary_used = False
         override_applied = sample["scenario_type"] != "intent_override"
@@ -314,6 +470,8 @@ class AppState:
                 "withheld": not ranked,
                 "scored_hit": counted,
                 "override_pending": not override_applied,
+                "keywords": _agent_keywords(agent, session_id),
+                "top_matches": self.decorate(_top_matches(agent, session_id, ranked), target),
             })
             if counted:
                 hit_turn = turn
@@ -389,6 +547,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/agents":
             self._send_json({"agents": STATE.available_agents()})
             return
+        if self.path == "/api/key":
+            self._send_json(STATE.key_status())
+            return
         if self.path == "/api/usage":
             self._send_json({"llm_usage": STATE.usage()})
             return
@@ -403,6 +564,17 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(STATE.new_session(
                     body.get("sample_id"), str(body.get("agent") or "rules"), body.get("options")
                 ))
+                return
+            if self.path == "/api/key":
+                try:
+                    body = self._read_json()
+                    if not body.get("test"):
+                        STATE.set_api_key(body.get("api_key"))
+                    self._send_json(STATE.check_key())
+                except Exception:
+                    # Deliberately opaque: an exception's text could otherwise
+                    # echo the submitted key straight back to the browser.
+                    self._send_json({"error": "could not set api key"}, 400)
                 return
             if self.path == "/api/message":
                 body = self._read_json()
@@ -435,15 +607,15 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Local browser front end for the agents")
-    parser.add_argument("--catalog", default=str(ROOT / "data" / "catalog.jsonl"))
-    parser.add_argument("--dataset", default=str(ROOT / "data" / "public_set.jsonl"))
+    parser.add_argument("--catalog", default=str(DATA_ROOT / "data" / "catalog.jsonl"))
+    parser.add_argument("--dataset", default=str(DATA_ROOT / "data" / "public_set.jsonl"))
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--agent", default="rules", choices=sorted(AGENT_INFO),
                         help="agent to warm up at startup (all remain selectable in the UI)")
     args = parser.parse_args()
 
     global STATE, INDEX_HTML
-    INDEX_HTML = (Path(__file__).resolve().parent / "index.html").read_bytes()
+    INDEX_HTML = (ROOT / "webapp" / "index.html").read_bytes()
     STATE = AppState(Path(args.catalog), Path(args.dataset))
     STATE.agent(args.agent)
 

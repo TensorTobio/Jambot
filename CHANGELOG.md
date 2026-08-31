@@ -6,6 +6,279 @@ scorer: `python3 -m evaluator.local_evaluator`.
 
 ---
 
+## 2026-08-31 — v3.4: the agent could not survive being spoken to differently
+
+**No change to the public score (0.9738).** This entry is entirely about a
+failure mode that the public set cannot show you.
+
+### The hole
+
+`docs/competition_specification.md` is explicit that the simulator's wording is
+not frozen:
+
+> The simulator policy decides what information to reveal. If natural-language
+> paraphrasing is added by the organizer, it cannot decide correctness.
+
+Everything the dialog layer knew came from eight regexes matching the shipped
+sentence frames exactly. Nothing had ever tested what happens when they do not
+match. `paraphrase_eval.py` (new) answers that: it calls the untouched
+evaluator's own `initial_message` / `customer_reply`, then rewrites only the
+sentence they return. The disclosure logic, the hidden card, the override
+schedule and the scoring are all bit-identical to an official run - the only
+thing that changes is how the customer phrases itself. The evaluator file is
+never modified; the wrappers are installed on the imported module inside the
+harness and removed in a `finally`.
+
+The result was not a degradation. It was a cliff:
+
+| level | HR@10 | MRR | MTTC | TS |
+|---|---|---|---|---|
+| L0 original frames | 1.000 | 0.9800 | 2.010 | **0.9738** |
+| L1 *light* rewording | 0.035 | 0.0107 | 10.740 | **0.0259** |
+| L2 heavy rewording | 0.035 | 0.0107 | 10.740 | 0.0259 |
+| L3 + values re-cased | 0.035 | 0.0107 | 10.740 | 0.0259 |
+
+A 97 % agent becomes a 2.6 % agent because "I'm looking for X. A key
+requirement is: Y." became "Hi, I need X. One thing that matters: Y.". The bug
+was structural rather than subtle: if no frame matched, `observe()` fell off the
+end and set **nothing at all** - not the category, not a constraint, not the
+scenario - so the ranker spent all ten turns scoring an empty query.
+
+### The fix: read the message for content, not for shape
+
+The same property the retrieval layer already exploits fixes this. Everything
+the customer discloses is a *verbatim string from the hidden product*, so those
+values can be looked for directly instead of being parsed out of a sentence.
+
+* **`normalise_constraint()` + `CatalogIndex.by_norm`** (58,800 keys) - case and
+  punctuation are collapsed, so `Material:alloy`, `material: alloy` and
+  `MATERIAL - ALLOY` all resolve to the same catalog entry. 98 % of keys are
+  unambiguous, and for public targets the most-supported spelling is the
+  target's own for 776 of 800 constraints.
+* **`CatalogIndex.find_constraints()`** - scans the word spans of any message,
+  longest-match-first and non-overlapping, so a full feature line beats a single
+  word inside it.
+* **`CatalogIndex.match_category_fuzzy()`** - token overlap against the
+  taxonomy, scored as the fraction of the *category's* tokens the message
+  covers, so a one-word message cannot claim a four-word category. A reworded
+  customer says "belts", not "Accessories Belts", and on turn 1 the category is
+  worth more than any constraint. Because it is a guess and not a reading, a
+  category recovered this way scores `W_CATEGORY_FUZZY` (120) instead of
+  `W_CATEGORY` (400).
+* **`SessionState._observe_freeform()`** - recovers category, override cue,
+  exhaustion cue and constraints. It runs **only when no frame matched**, which
+  is what keeps L0 at exactly 0.9738 - verified against the official scorer, not
+  assumed.
+
+### Three rounds of false positives
+
+The scanner is only useful if it is quiet. Each of these was caught by
+inspecting extractions on hand-written paraphrases, and each is now a test:
+
+1. `"Jewelry Necklaces"` donated `jewelry` as a *constraint*. The category name
+   is masked out of the text before scanning.
+2. `"narrow it down"` donated `down`, and `"nothing more on other"` donated back
+   the very attribute we had just asked about. Both are freak one-off constraint
+   strings - fewer than three products in 50,000 use them - so bare single words
+   now need to carry content (`BARE_WORD_STOP`) as well as exist.
+3. A re-cased `imported` was being *dropped*, because it failed an exact-key
+   test that `Imported` would have passed. Bare words now also resolve through
+   an unambiguous normalised lookup.
+
+### Things this deliberately does not do
+
+* **It does not touch the scoring path.** Making constraint matching itself
+  normalisation-aware would recover more of L3, but it also dilutes exact
+  matching on L0 - two different raw constraints that normalise together would
+  both start counting as hits. 0.9738 is the number that gets scored; it was not
+  worth risking for a hypothetical.
+* **It does not replace the frames.** They are exact, they are free, and they
+  are still tried first. The fallback is a safety net.
+
+### After
+
+| level | what the rewriter does | HR@10 | MRR | MTTC | TS |
+|---|---|---|---|---|---|
+| L0 | nothing (control) | 1.000 | 0.9800 | 2.010 | **0.9738** |
+| L1 | reworded carrier, values quoted | 1.000 | 0.9750 | 2.015 | **0.9722** |
+| L2 | heavily reworded carrier | 1.000 | 0.9750 | 2.015 | **0.9722** |
+| L3 | + values lower-cased and de-punctuated | 0.945 | 0.8811 | 2.600 | 0.9048 |
+| L4 | + category cut to one lower-case word | 0.845 | 0.7734 | 3.790 | 0.7987 |
+
+**L0 is unchanged to the digit**, which is the point: the fallback is inert
+whenever a frame matches, so nothing about the scored configuration moved.
+
+L1 and L2 are the realistic cases - a paraphraser rewrites the sentence but goes
+on quoting the product's own attributes, because that is where the attributes
+come from. Those cost 0.0016.
+
+L3 and L4 are adversarial cases invented here, and they should be read as a
+floor rather than a forecast. L4 in particular compounds two independent
+degradations; it is where the residual risk now lives, and the diagnosis is
+specific: recovering "belts" back to "Accessories Belts" is a *guess*, and over
+the 200 public targets it is the wrong guess 80 times against 76 right ones.
+Downweighting that guess to `W_CATEGORY_FUZZY` measured neutral (0.7988 →
+0.7987) and is kept as a hedge, not claimed as a gain. The honest next step for
+L4 is soft evidence over several candidate categories rather than committing to
+one, which is a change to the scoring path and was not worth making against a
+synthetic adversary.
+
+### Verification
+
+`tests/test_dialog_robustness.py` (new, 10 tests) pins both halves: that the
+original frames still parse exactly as before, that reworded and
+case-damaged input still resolves, and that the scanner does not invent
+constraints out of category names or filler words. Full suite: 13 tests.
+`api_call_agent` still passes its selftest in all three stub modes, including
+the dead-API path.
+
+---
+
+## 2026-08-30 — v3.3: the list length is the decision, not whether to answer
+
+**TechnicalScore 0.9532 → 0.9738** on the full 200-session official scorer.
+Hit Rate stays 1.0, MRR 0.9699 → 0.9800, MTTC 2.890 → 2.010.
+
+| | HR@10 | MRR | MTTC | Efficiency | TechnicalScore |
+|---|---|---|---|---|---|
+| v3.2 | 1.0 | 0.9699 | 2.890 | 0.811 | 0.9532 |
+| **v3.3** | **1.0** | **0.9800** | **2.010** | **0.899** | **0.9738** |
+
+### Where the remaining score actually was
+
+v3.2 was already at Hit Rate 1.0 with 191 of 200 targets landing at rank 1, so
+the only two things left to buy were the last 0.009 of MRR and the 0.038 of
+Efficiency being lost to MTTC. Efficiency was four times the bigger prize, and
+v3.2's recommend-now policy was spending turns to protect an MRR that was
+already nearly maxed.
+
+To size the prize before writing any code, every public session was replayed for
+all 10 turns with the recommendation list forced empty, so the session never
+ends and the target's rank at *every* turn is recorded. Because the simulated
+customer's reply depends only on `ask_attribute` and never on the products we
+show, that trace is exact, not an approximation. It gives two ceilings:
+
+* **0.9705** — the best any stopping rule could score on top of the v3.2 ranker.
+* **0.9922** — the ceiling if every session hit at rank 1 on its earliest legal
+  turn (intent-override sessions cannot convert before turn 3 or 4, which alone
+  puts a floor of 1.39 under MTTC).
+
+So v3.2 was leaving 0.017 on the table in *stopping* and another 0.022 in
+*ranking*. The stopping half is the one with a clean answer.
+
+### 1. `SHOW_SCHEDULE` — a short list is a free bet
+
+The session ends at the first hit, so what a turn really decides is not
+*whether* to answer but **how many products to show**. Accepting rank `r` on
+turn `t` is worth `0.30/r − 0.02*t`. Two consequences:
+
+* Accepting rank 2 instead of rank 1 costs 0.15, which is **seven turns** of
+  Efficiency. Early hits at rank 2+ are almost never worth taking.
+* Showing a *short* list costs nothing when it misses. The target is simply not
+  in it, the session continues, and the bill is one turn at 0.02.
+
+So the agent opens with its single best guess and widens only when the
+conversation stops producing constraints:
+
+```python
+SHOW_SCHEDULE = (1, 1, 1, 10)   # products shown on turns 1, 2, 3, 4+
+```
+
+This replaces v3.2's confidence heuristic (`best_hits`/`tied_at_best`
+thresholds) entirely — and it needs no confidence estimate at all, which is why
+it beats one. Measured against the trace, `(1, 1, 1, 10)` scores 0.9741 where
+the *oracle* stopping rule for the same ranker scores 0.9748: within 0.0007 of
+perfect play, from four integers.
+
+| schedule (products shown per turn) | HR | MRR | MTTC | TS |
+|---|---|---|---|---|
+| `10,10,10,10` (always show full) | 1.0 | 0.7183 | 1.515 | 0.9052 |
+| `0,0,0,10` (v3.2 hold-back, idealised) | 1.0 | 0.9808 | 4.000 | 0.9343 |
+| `1,1,10,10` | 1.0 | 0.9634 | 1.960 | 0.9698 |
+| `1,1,1,1,10` | 1.0 | 0.9808 | 2.040 | 0.9735 |
+| **`1,1,1,10`** | **1.0** | **0.9808** | **2.010** | **0.9741** ← shipped |
+| `2,2,2,10` | 1.0 | 0.9058 | 1.835 | 0.9550 |
+
+Those rows are replayed off the 10-turn trace so that all six schedules can be compared without six evaluator runs; the shipped row reproduces as **0.9738** under `python3 -m evaluator.local_evaluator` itself (the 0.0003 is tie-break ordering between equally-scored products).
+
+Widening to the full ten by turn 4 is the safety net, not the strategy: it is
+what keeps Hit Rate at 1.0 if the short bets all miss. `state.exhausted` widens
+early for the same reason — once the customer has nothing left to disclose there
+is no later turn worth waiting for.
+
+### 2. The purchase prior was under-weighted
+
+The hidden targets are real purchase records, so how often a product has been
+bought is the strongest signal left once the structured routes tie — and on turn
+1 of a Browsing session it is the *only* signal. Ranking each target's own
+category bucket by popularity alone already puts 70 of 200 targets at rank 1.
+That prior was carrying a weight of 3.
+
+| constant | v3.2 | v3.3 |
+|---|---|---|
+| `W_POPULARITY` (`average_rating × log10(1+n)`) | 3.0 | **10.0** |
+| `W_POPULARITY_N` (`log10(1+n)` alone) | — | **20.0** |
+| `W_PROFILE` (profile `preference_tags` hits) | 8.0 | **2.0** |
+
+The two prior shapes are kept because they disagree usefully: the
+rating-weighted one prefers a well-liked product, the count-only one prefers a
+frequently-bought one. Targets at rank 1 on turn 1 go from 70 to 76, and by turn
+4 from 191 to 194.
+
+`W_PROFILE` moved the *wrong* way at 8.0 — the aggregate profile's
+`preference_tags` are generic ("fit", "comfort", "style") and match most of the
+catalog, so an 8-point boost was mostly adding noise to the tie-break the
+popularity prior was trying to win. It is kept at 2.0 rather than 0.0: the two
+score identically and a small non-zero weight keeps the personalisation signal
+live for a private set whose tags may be sharper.
+
+### 3. Tuned on a split, not on the answer
+
+Weights were fitted by coordinate ascent on **half** the public set (even
+sample indices) and checked on the other half. That check earned its keep: full
+unrestricted ascent found `W_CONSTRAINT 1000 → 250` and `W_KEYWORD 25 → 400`
+worth +0.006 on the training half and **−0.004** on the held-out half — textbook
+overfitting to 100 sessions, and both were discarded. Only changes that improved
+*both* halves were shipped, and each sits on a broad plateau
+(`W_POPULARITY` anywhere in 6–30 scores within 0.0005) rather than a knife edge.
+
+### Things that were tried and did not work
+
+Recorded because a negative result measured on the real scorer is worth more
+than an untested idea:
+
+* **User-profile rating affinity.** `average_prior_rating` correlates 0.18 with
+  the target's `average_rating`, which sounded usable. Scoring products by
+  proximity to it changed the score by 0.0000 at every weight from 0.5 to 50.
+  Same for tilting by `rating_style` ("critical" users buying lower-rated
+  items). The correlation is real and too weak to rank on.
+* **IDF-weighted constraint matching.** Weighting each matched constraint by
+  `log(1 + N/df)` so that a rare feature line outranks "cotton": −0.001. The
+  constraint routes are already decisive when they fire; the ties they leave are
+  between products that match the *same* constraint, where IDF says nothing.
+* **Hard category filtering.** The coarse category parsed from the opening line
+  matches the target's own bucket for 200 of 200 public sessions, so restricting
+  the pool to it looked free. It changed nothing — at `W_CATEGORY` 400 the
+  category term already dominates — and it converts a perfect-recall soft signal
+  into a single point of failure on the private set. Not shipped.
+* **Pure popularity as the only prior** (dropping the rating-weighted shape):
+  −0.019. It wins in isolation and loses in combination.
+
+### Files touched
+
+* `starter/agent.py` — `SHOW_SCHEDULE` replaces `FORCE_RECOMMEND_TURN` /
+  `CONFIDENT_TIE` / `MIN_CONFIDENT_HITS`.
+* `starter/retrieval.py` — `W_POPULARITY`, new `W_POPULARITY_N`, `W_PROFILE`;
+  `CatalogIndex.prior_n`.
+* `api_call_agent/agent.py` — imports `SHOW_SCHEDULE` from the deterministic
+  track rather than re-declaring the policy, so the two cannot drift. The rerank
+  gate is now asked about the window that will actually be *shown*, not a
+  ten-deep window of which only the first position is visible.
+* `sweep.py` — sweeps `SHOW_SCHEDULE` and the prior weights; the old grid swept
+  constants that no longer exist.
+
+---
+
 ## 2026-08-29 — v3.2: varied questions, and the ask-policy ablation
 
 Two proposals: (a) ask a **different, distinguishing** question each turn rather

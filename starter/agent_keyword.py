@@ -304,7 +304,10 @@ class Agent:
 
     def __init__(self, catalog_path: str | Path = "data/catalog.jsonl") -> None:
         self.catalog_path = Path(catalog_path)
-        self.connection = sqlite3.connect(":memory:")
+        # check_same_thread=False to match starter/retrieval.py: the index is
+        # built once and only read afterwards, and webapp/ serves each request
+        # on its own thread. The evaluator is single-threaded either way.
+        self.connection = sqlite3.connect(":memory:", check_same_thread=False)
         self.connection.execute("PRAGMA query_only = OFF")
         self._prices: dict[str, float] = {}
         self._sessions: dict[str, _SessionState] = {}

@@ -1,37 +1,37 @@
 [
   {
-    "config": "other  + hold back  (shipped)",
+    "config": "other  + short list (shipped)",
     "ask_policy": "other",
     "always_recommend": false,
     "HR": 1.0,
-    "MRR": 0.969917,
-    "MTTC": 2.89,
-    "Eff": 0.811,
-    "TS": 0.953175,
+    "MRR": 0.98,
+    "MTTC": 2.01,
+    "Eff": 0.899,
+    "TS": 0.9738,
     "scenario_metrics": {
       "boundary": {
         "sample_count": 10,
         "hit_rate_at_10": 1.0,
         "mrr": 1.0,
-        "mttc": 3.7
+        "mttc": 2.7
       },
       "browsing": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.951875,
-        "mttc": 2.775
+        "mrr": 0.96875,
+        "mttc": 1.8375
       },
       "buying": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.98125,
-        "mttc": 2.6
+        "mrr": 0.989583,
+        "mttc": 1.475
       },
       "intent_override": {
         "sample_count": 30,
         "hit_rate_at_10": 1.0,
         "mrr": 0.977778,
-        "mttc": 3.7
+        "mttc": 3.666667
       }
     }
   },
@@ -40,70 +40,70 @@
     "ask_policy": "other",
     "always_recommend": true,
     "HR": 1.0,
-    "MRR": 0.716282,
-    "MTTC": 1.595,
-    "Eff": 0.9405,
-    "TS": 0.902985,
+    "MRR": 0.71751,
+    "MTTC": 1.515,
+    "Eff": 0.9485,
+    "TS": 0.904953,
     "scenario_metrics": {
       "boundary": {
         "sample_count": 10,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.62,
-        "mttc": 1.6
+        "mrr": 0.528333,
+        "mttc": 1.4
       },
       "browsing": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.637912,
-        "mttc": 1.3375
+        "mrr": 0.651696,
+        "mttc": 1.2125
       },
       "buying": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.732376,
-        "mttc": 1.1
+        "mrr": 0.72562,
+        "mttc": 1.05
       },
       "intent_override": {
         "sample_count": 30,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.914444,
+        "mrr": 0.934444,
         "mttc": 3.6
       }
     }
   },
   {
-    "config": "split  + hold back",
+    "config": "split  + short list",
     "ask_policy": "split",
     "always_recommend": false,
     "HR": 1.0,
-    "MRR": 0.942833,
-    "MTTC": 3.105,
-    "Eff": 0.7895,
-    "TS": 0.94075,
+    "MRR": 0.967778,
+    "MTTC": 2.075,
+    "Eff": 0.8925,
+    "TS": 0.968833,
     "scenario_metrics": {
       "boundary": {
         "sample_count": 10,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.925,
-        "mttc": 3.7
+        "mrr": 0.911111,
+        "mttc": 2.7
       },
       "browsing": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.906042,
-        "mttc": 3.1125
+        "mrr": 0.949306,
+        "mttc": 1.9125
       },
       "buying": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.975,
-        "mttc": 2.775
+        "mrr": 0.989583,
+        "mttc": 1.5875
       },
       "intent_override": {
         "sample_count": 30,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.961111,
-        "mttc": 3.766667
+        "mrr": 0.977778,
+        "mttc": 3.6
       }
     }
   },
@@ -112,70 +112,70 @@
     "ask_policy": "split",
     "always_recommend": true,
     "HR": 1.0,
-    "MRR": 0.723155,
-    "MTTC": 1.64,
-    "Eff": 0.936,
-    "TS": 0.904146,
+    "MRR": 0.718024,
+    "MTTC": 1.54,
+    "Eff": 0.946,
+    "TS": 0.904607,
     "scenario_metrics": {
       "boundary": {
         "sample_count": 10,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.62,
-        "mttc": 1.7
+        "mrr": 0.528333,
+        "mttc": 1.4
       },
       "browsing": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.644122,
-        "mttc": 1.425
+        "mrr": 0.654092,
+        "mttc": 1.275
       },
       "buying": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.725848,
-        "mttc": 1.1125
+        "mrr": 0.708259,
+        "mttc": 1.05
       },
       "intent_override": {
         "sample_count": 30,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.961111,
+        "mrr": 0.977778,
         "mttc": 3.6
       }
     }
   },
   {
-    "config": "rotate + hold back",
+    "config": "rotate + short list",
     "ask_policy": "rotate",
     "always_recommend": false,
     "HR": 1.0,
-    "MRR": 0.861179,
-    "MTTC": 3.545,
-    "Eff": 0.7455,
-    "TS": 0.907454,
+    "MRR": 0.880458,
+    "MTTC": 2.37,
+    "Eff": 0.863,
+    "TS": 0.936737,
     "scenario_metrics": {
       "boundary": {
         "sample_count": 10,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.633333,
-        "mttc": 4.8
+        "mrr": 0.528333,
+        "mttc": 3.5
       },
       "browsing": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.817202,
-        "mttc": 3.6625
+        "mrr": 0.863333,
+        "mttc": 2.375
       },
       "buying": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.914702,
-        "mttc": 3.2125
+        "mrr": 0.922396,
+        "mttc": 1.7375
       },
       "intent_override": {
         "sample_count": 30,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.911667,
-        "mttc": 3.7
+        "mrr": 0.931667,
+        "mttc": 3.666667
       }
     }
   },
@@ -184,33 +184,33 @@
     "ask_policy": "rotate",
     "always_recommend": true,
     "HR": 1.0,
-    "MRR": 0.699683,
-    "MTTC": 1.78,
-    "Eff": 0.922,
-    "TS": 0.894305,
+    "MRR": 0.704732,
+    "MTTC": 1.62,
+    "Eff": 0.938,
+    "TS": 0.89902,
     "scenario_metrics": {
       "boundary": {
         "sample_count": 10,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.62,
-        "mttc": 2.6
+        "mrr": 0.528333,
+        "mttc": 2.0
       },
       "browsing": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.616483,
-        "mttc": 1.65
+        "mrr": 0.638155,
+        "mttc": 1.4
       },
       "buying": {
         "sample_count": 80,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.713348,
-        "mttc": 1.125
+        "mrr": 0.708259,
+        "mttc": 1.05
       },
       "intent_override": {
         "sample_count": 30,
         "hit_rate_at_10": 1.0,
-        "mrr": 0.911667,
+        "mrr": 0.931667,
         "mttc": 3.6
       }
     }
